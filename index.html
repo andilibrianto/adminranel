@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RANEL CELL - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+        <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js'; // Tambahan
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDmDyI5olQ2a0zaxLIASH3EglRfsAmE7-Q",
+            authDomain: "ranel-cell.firebaseapp.com",
+            projectId: "ranel-cell",
+            storageBucket: "ranel-cell.firebasestorage.app",
+            messagingSenderId: "267696476787",
+            appId: "1:267696476787:web:5fda181cfdaeec413e5006"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        
+        // Inisialisasi App Check (Sama seperti aplikasi utama)
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        }
+        const appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6Le6GHotAAAAANiAaJBAx3UoO3DY8EfPVush6jAs'),
+            isTokenAutoRefreshEnabled: true
+        });
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.firebaseAdmin = {
+            auth, db, collection, query, orderBy, onSnapshot, doc, updateDoc,
+            signInWithEmailAndPassword, signOut, onAuthStateChanged
+        };
+        window.dispatchEvent(new Event('firebase-admin-ready'));
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { poppins: ['Poppins','sans-serif'] },
+                    colors: {
+                        pk: { DEFAULT:'#FF2D78', light:'#FF6B9D', dark:'#CC1F5E' },
+                        dk: { 950:'#050505', 900:'#0A0A0A', 800:'#111111', 700:'#1A1A1A', 600:'#252525', 500:'#333333', 400:'#444444' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family:'Poppins',sans-serif; background:#0A0A0A; color:#fff; margin:0; }
+        .card { background:#141414; border:1px solid #222; border-radius:14px; }
+        .form-input { width:100%; background:#0e0e0e; border:1px solid #2a2a2a; border-radius:10px; padding:12px 14px; color:#fff; outline:none; }
+        .form-input:focus { border-color:#FF2D78; }
+        .btn-pk { background:linear-gradient(135deg, #FF2D78, #FF6B9D); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:600; cursor:pointer; }
+        .btn-outline { background:transparent; color:#FF2D78; border:1.5px solid #FF2D78; border-radius:10px; padding:10px 20px; font-weight:600; cursor:pointer; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #222; font-size: 14px; }
+        th { color: #888; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .badge-yellow { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+        .badge-green { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .badge-orange { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Login View -->
+    <div id="login-view" class="w-full max-w-sm">
+        <div class="card p-8">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-pk/10 flex items-center justify-center">
+                    <i class="fa-solid fa-shield-halved text-pk text-2xl"></i>
+                </div>
+                <h1 class="text-xl font-bold">Admin Dashboard</h1>
+                <p class="text-xs text-gray-500 mt-1">RANEL CELL</p>
+            </div>
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Admin Email</label>
+                <input type="email" id="admin-email" class="form-input" placeholder="admin@email.com">
+            </div>
+            <div class="mb-6">
+                <label class="text-xs text-gray-500 mb-1 block">Password</label>
+                <input type="password" id="admin-pass" class="form-input" placeholder="••••••••">
+            </div>
+            <button onclick="adminLogin()" class="btn-pk w-full">Masuk</button>
+            <p id="login-error" class="text-red-400 text-xs mt-4 text-center hidden"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="hidden w-full max-w-6xl my-8">
+        
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-bold">Riwayat Pesanan</h1>
+                <p class="text-sm text-gray-500">Kelola transaksi pelanggan Ranel Cell</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="loadOrders()" class="btn-outline text-sm">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Refresh
+                </button>
+                <button onclick="adminLogout()" class="btn-outline text-sm">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <div class="card p-4 mb-6 flex gap-4">
+            <div class="flex-1">
+                <input type="text" id="search-input" placeholder="Cari ID Transaksi atau Nama..." class="form-input" oninput="filterTable()">
+            </div>
+            <select id="filter-status" class="form-input w-48" onchange="filterTable()">
+                <option value="">Semua Status</option>
+                <option>Menunggu Pembayaran</option>
+                <option>Sedang Dalam Proses</option>
+                <option>Sedang Dalam Pengiriman</option>
+                <option>Sedang Ditinjau</option>
+                <option>Proses Perbaikkan/Service</option>
+                <option>Pengiriman Unit</option>
+                <option>Penjemputan Unit</option>
+                <option>Proses Cek Unit</option>
+                <option>Unit Belum Diserahkan</option>
+                <option>Berhasil</option>
+                <option>Berhasil Ditinjau</option>
+                <option>Gagal</option>
+                <option>Refund</option>
+            </select>
+        </div>
+
+        <div class="card overflow-x-auto">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>ID Transaksi</th>
+                        <th>Nama Pelanggan</th>
+                        <th>Detail</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-table-body">
+                    <tr>
+                        <td colspan="7" class="text-center text-gray-500 py-8">Memuat data transaksi...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+        <!-- Modal Edit Data Transaksi -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="card p-6 w-full max-w-2xl my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold">Edit Detail Transaksi</h3>
+                <button onclick="closeEditModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2 mb-2">
+                    <label class="text-xs text-gray-500 mb-1 block">ID Transaksi (Tidak Bisa Diubah)</label>
+                    <input type="text" id="modal-order-id" class="form-input text-pk font-bold" readonly>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Nama Pelanggan</label>
+                    <input type="text" id="modal-userName" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Nomor Telepon</label>
+                    <input type="text" id="modal-userTelp" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Waktu Transaksi</label>
+                    <input type="text" id="modal-transactionDate" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Metode Pembayaran</label>
+                    <input type="text" id="modal-paymentMethod" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Subtotal</label>
+                    <input type="number" id="modal-subtotal" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Ongkos Kirim</label>
+                    <input type="number" id="modal-shippingCost" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Diskon Promo</label>
+                    <input type="number" id="modal-promoDiscount" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Total Bayar</label>
+                    <input type="number" id="modal-total" class="form-input">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Status</label>
+                    <select id="modal-status" class="form-input">
+                        <option>Menunggu Pembayaran</option>
+                        <option>Sedang Dalam Proses</option>
+                        <option>Sedang Dalam Pengiriman</option>
+                        <option>Sedang Ditinjau</option>
+                        <option>Proses Perbaikkan/Service</option>
+                        <option>Pengiriman Unit</option>
+                        <option>Penjemputan Unit</option>
+                        <option>Proses Cek Unit</option>
+                        <option>Unit Belum Diserahkan</option>
+                        <option>Berhasil</option>
+                        <option>Berhasil Ditinjau</option>
+                        <option>Gagal</option>
+                        <option>Refund</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Mode Pengiriman</label>
+                    <select id="modal-shippingMode" class="form-input">
+                        <option value="">- Tidak Ada -</option>
+                        <option value="pickup">pickup</option>
+                        <option value="deliver">deliver</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">Alamat</label>
+                    <textarea id="modal-address" class="form-input" rows="2"></textarea>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">Kode Promo</label>
+                    <input type="text" id="modal-promoCode" class="form-input">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">Daftar Barang (Format JSON)</label>
+                    <textarea id="modal-items" class="form-input font-mono text-xs" rows="4" placeholder='[{"name":"Barang A","price":10000,"quantity":2}]'></textarea>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500 mb-1 block">ID Pelanggan (Format JSON)</label>
+                    <textarea id="modal-idPelanggan" class="form-input font-mono text-xs" rows="3" placeholder='{"0":["12345678"]}'>'></textarea>
+                </div>
+            </div>
+
+            <button onclick="saveDataChange()" class="btn-pk w-full mt-6">Simpan Perubahan</button>
+            <button onclick="closeEditModal()" class="btn-outline w-full mt-3">Batal</button>
+        </div>
+    </div>
+
+    <script>
+        let currentDocId = null;
+        let allOrders = [];
+
+        window.addEventListener('firebase-admin-ready', function() {
+            const { auth, onAuthStateChanged } = window.firebaseAdmin;
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('dashboard-view').classList.remove('hidden');
+                    loadOrders();
+                } else {
+                    document.getElementById('login-view').classList.remove('hidden');
+                    document.getElementById('dashboard-view').classList.add('hidden');
+                }
+            });
+        });
+
+        function adminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const pass = document.getElementById('admin-pass').value;
+            const errorEl = document.getElementById('login-error');
+            
+            window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
+                .catch(err => {
+                    errorEl.textContent = "Email atau password salah. Pastikan akun Anda sudah terdaftar di Firebase Auth.";
+                    errorEl.classList.remove('hidden');
+                });
+        }
+
+        function adminLogout() {
+            window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
+        }
+
+        function loadOrders() {
+            const { db, collection, query, orderBy, onSnapshot } = window.firebaseAdmin;
+            
+            // Ambil semua data, urutkan berdasarkan waktu transaksi (terbaru di atas)
+            const q = query(collection(db, "Riwayat_Pesanan"));
+            
+            onSnapshot(q, (snapshot) => {
+                allOrders = [];
+                snapshot.forEach((doc) => {
+                    allOrders.push({ id: doc.id, data: doc.data() });
+                });
+
+                // Sortir manual berdasarkan tanggal karena format tanggal string
+                allOrders.sort((a, b) => {
+                    let dateA = a.data.transactionDate || '';
+                    let dateB = b.data.transactionDate || '';
+                    return dateB.localeCompare(dateA);
+                });
+
+                renderTable(allOrders);
+            }, (error) => {
+                console.error("Error fetching orders: ", error);
+                document.getElementById('orders-table-body').innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules Anda.</td></tr>`;
+            });
+        }
+
+        function renderTable(orders) {
+            const tbody = document.getElementById('orders-table-body');
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada transaksi ditemukan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => {
+                const d = order.data;
+                let statusClass = 'badge-yellow';
+                if (d.status === 'Berhasil' || d.status === 'Berhasil Ditinjau') statusClass = 'badge-green';
+                else if (d.status === 'Gagal' || d.status === 'Refund') statusClass = 'badge-red';
+                else if (d.status === 'Unit Belum Diserahkan' || d.status === 'Sedang Ditinjau') statusClass = 'badge-orange';
+                else if (d.status === 'Sedang Dalam Pengiriman') statusClass = 'badge-blue';
+
+                // Format detail barang
+                let itemsText = d.items ? d.items.map(item => `${item.name} (x${item.quantity})`).join(', ') : '-';
+                if (itemsText.length > 50) itemsText = itemsText.substring(0, 50) + '...';
+
+                const total = d.total ? `Rp ${d.total.toLocaleString('id-ID')}` : 'Rp 0';
+
+                return `
+                    <tr>
+                        <td class="text-gray-400 whitespace-nowrap text-xs">${d.transactionDate || '-'}</td>
+                        <td class="font-mono text-xs whitespace-nowrap">${order.id}</td>
+                        <td class="whitespace-nowrap">
+                            <div class="font-medium text-sm">${d.userName || '-'}</div>
+                            <div class="text-xs text-gray-500">${d.userTelp || '-'}</div>
+                        </td>
+                        <td class="text-xs text-gray-400 max-w-xs">${itemsText}</td>
+                        <td class="font-bold whitespace-nowrap text-sm">${total}</td>
+                        <td><span class="badge ${statusClass} whitespace-nowrap">${d.status || 'Menunggu'}</span></td>
+                        <td class="whitespace-nowrap">
+                            <button onclick="openEditModal('${order.id}')" class="btn-outline text-xs px-3 py-1.5">
+                                <i class="fa-solid fa-pen mr-1"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('filter-status').value;
+
+            const filtered = allOrders.filter(order => {
+                const d = order.data;
+                const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
+                const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
+                return matchesSearch && matchesStatus;
+            });
+
+            renderTable(filtered);
+        }
+
+                    function openEditModal(docId) {
+            currentDocId = docId;
+            
+            // Cari data transaksi berdasarkan ID di memori (allOrders)
+            const orderObj = allOrders.find(o => o.id === docId);
+            if (!orderObj) {
+                alert("Data transaksi tidak ditemukan di memori!");
+                return;
+            }
+            
+            const d = orderObj.data;
+            
+            document.getElementById('modal-order-id').value = docId;
+            document.getElementById('modal-userName').value = d.userName || '';
+            document.getElementById('modal-userTelp').value = d.userTelp || '';
+            document.getElementById('modal-transactionDate').value = d.transactionDate || '';
+            document.getElementById('modal-paymentMethod').value = d.paymentMethod || '';
+            document.getElementById('modal-subtotal').value = d.subtotal || 0;
+            document.getElementById('modal-shippingCost').value = d.shippingCost || 0;
+            document.getElementById('modal-promoDiscount').value = d.promoDiscount || 0;
+            document.getElementById('modal-total').value = d.total || 0;
+            document.getElementById('modal-status').value = d.status || 'Menunggu Pembayaran';
+            document.getElementById('modal-shippingMode').value = d.shippingMode || '';
+            document.getElementById('modal-address').value = d.address || '';
+            document.getElementById('modal-promoCode').value = d.promoCode || '';
+            
+            // Isi JSON untuk Items dan idPelanggan
+            document.getElementById('modal-items').value = JSON.stringify(d.items || [], null, 2);
+            document.getElementById('modal-idPelanggan').value = JSON.stringify(d.idPelanggan || {}, null, 2);
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            currentDocId = null;
+        }
+
+        async function saveDataChange() {
+            if (!currentDocId) return;
+            
+            try {
+                // Ambil semua nilai dari form
+                const updatedData = {
+                    userName: document.getElementById('modal-userName').value,
+                    userTelp: document.getElementById('modal-userTelp').value,
+                    transactionDate: document.getElementById('modal-transactionDate').value,
+                    paymentMethod: document.getElementById('modal-paymentMethod').value,
+                    subtotal: parseInt(document.getElementById('modal-subtotal').value) || 0,
+                    shippingCost: parseInt(document.getElementById('modal-shippingCost').value) || 0,
+                    promoDiscount: parseInt(document.getElementById('modal-promoDiscount').value) || 0,
+                    total: parseInt(document.getElementById('modal-total').value) || 0,
+                    status: document.getElementById('modal-status').value,
+                    shippingMode: document.getElementById('modal-shippingMode').value,
+                    address: document.getElementById('modal-address').value,
+                    promoCode: document.getElementById('modal-promoCode').value,
+                    // Parse kembali JSON string menjadi Object/Array
+                    items: JSON.parse(document.getElementById('modal-items').value),
+                    idPelanggan: JSON.parse(document.getElementById('modal-idPelanggan').value)
+                };
+
+                const { db, doc, updateDoc } = window.firebaseAdmin;
+                const orderRef = doc(db, "Riwayat_Pesanan", currentDocId);
+                
+                await updateDoc(orderRef, updatedData);
+                
+                showToast("Data transaksi berhasil diperbarui!");
+                closeEditModal();
+            } catch (err) {
+                console.error("Error updating data: ", err);
+                alert("Gagal menyimpan. Pastikan format JSON pada kolom 'Daftar Barang' dan 'ID Pelanggan' ditulis dengan benar (gunakan tanda kurung [] dan {}).");
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 font-medium text-sm';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
