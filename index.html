@@ -277,27 +277,63 @@
                 }
             });
         });
+        function showLoading() {
+            const el = document.getElementById('loading-overlay');
+            if (el) el.classList.remove('hidden');
+        }
+        function hideLoading() {
+            const el = document.getElementById('loading-overlay');
+            if (el) el.classList.add('hidden');
+        }
 
+        window.addEventListener('firebase-admin-ready', function() {
+            const { auth, onAuthStateChanged } = window.firebaseAdmin;
+
+            showLoading();
+
+            onAuthStateChanged(auth, (user) => {
+                hideLoading();
+
+                if (user) {
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('dashboard-view').classList.remove('hidden');
+                    loadOrders();
+                } else {
+                    document.getElementById('login-view').classList.remove('hidden');
+                    document.getElementById('dashboard-view').classList.add('hidden');
+                }
+            });
+        });
         function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
             
+            showLoading();
+            
             window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
+                .then(() => {
+                    errorEl.classList.add('hidden');
+                })
                 .catch(err => {
-                    errorEl.textContent = "Email atau password salah. Pastikan akun Anda sudah terdaftar di Firebase Auth.";
+                    hideLoading();
+                    
+                    let msg = "Terjadi error. Cek console (F12).";
+                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar di Firebase Auth.";
+                    else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
+                    else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
+                    else if (err.code === 'auth/network-request-failed') msg = "Jaringan internet bermasalah.";
+                    else if (err.code === 'auth/too-many-requests') msg = "Terlalu banyak percobaan login gagal. Coba lagi nanti.";
+                    
+                    errorEl.textContent = msg;
                     errorEl.classList.remove('hidden');
                 });
         }
-
         function adminLogout() {
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
-
         function loadOrders() {
             const { db, collection, query, orderBy, onSnapshot } = window.firebaseAdmin;
-            
-            // Ambil semua data, urutkan berdasarkan waktu transaksi (terbaru di atas)
             const q = query(collection(db, "Riwayat_Pesanan"));
             
             onSnapshot(q, (snapshot) => {
@@ -306,7 +342,6 @@
                     allOrders.push({ id: doc.id, data: doc.data() });
                 });
 
-                // Sortir manual berdasarkan tanggal karena format tanggal string
                 allOrders.sort((a, b) => {
                     let dateA = a.data.transactionDate || '';
                     let dateB = b.data.transactionDate || '';
@@ -319,7 +354,6 @@
                 document.getElementById('orders-table-body').innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules Anda.</td></tr>`;
             });
         }
-
         function renderTable(orders) {
             const tbody = document.getElementById('orders-table-body');
             
@@ -362,7 +396,6 @@
                 `;
             }).join('');
         }
-
         function filterTable() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const statusFilter = document.getElementById('filter-status').value;
@@ -376,11 +409,8 @@
 
             renderTable(filtered);
         }
-
-                    function openEditModal(docId) {
+        function openEditModal(docId) {
             currentDocId = docId;
-            
-            // Cari data transaksi berdasarkan ID di memori (allOrders)
             const orderObj = allOrders.find(o => o.id === docId);
             if (!orderObj) {
                 alert("Data transaksi tidak ditemukan di memori!");
@@ -402,24 +432,18 @@
             document.getElementById('modal-shippingMode').value = d.shippingMode || '';
             document.getElementById('modal-address').value = d.address || '';
             document.getElementById('modal-promoCode').value = d.promoCode || '';
-            
-            // Isi JSON untuk Items dan idPelanggan
             document.getElementById('modal-items').value = JSON.stringify(d.items || [], null, 2);
             document.getElementById('modal-idPelanggan').value = JSON.stringify(d.idPelanggan || {}, null, 2);
-            
             document.getElementById('edit-modal').classList.remove('hidden');
         }
-
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
             currentDocId = null;
         }
-
         async function saveDataChange() {
             if (!currentDocId) return;
             
             try {
-                // Ambil semua nilai dari form
                 const updatedData = {
                     userName: document.getElementById('modal-userName').value,
                     userTelp: document.getElementById('modal-userTelp').value,
@@ -433,7 +457,6 @@
                     shippingMode: document.getElementById('modal-shippingMode').value,
                     address: document.getElementById('modal-address').value,
                     promoCode: document.getElementById('modal-promoCode').value,
-                    // Parse kembali JSON string menjadi Object/Array
                     items: JSON.parse(document.getElementById('modal-items').value),
                     idPelanggan: JSON.parse(document.getElementById('modal-idPelanggan').value)
                 };
@@ -458,7 +481,6 @@
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
-                // PWA Setup untuk Admin
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
