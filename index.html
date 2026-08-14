@@ -91,7 +91,12 @@
             </div>
             <div class="mb-6">
                 <label class="text-xs text-gray-500 mb-1 block">Password</label>
-                <input type="password" id="admin-pass" class="form-input" placeholder="••••••••">
+                <div class="relative">
+                    <input type="password" id="admin-pass" class="form-input pr-10" placeholder="••••••••">
+                    <button type="button" onclick="toggleAdminPassword(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-pk transition-colors" aria-label="Lihat Password">
+                        <i class="fa-solid fa-eye text-sm"></i>
+                    </button>
+                </div>
             </div>
             <button onclick="adminLogin()" class="btn-pk w-full">Masuk</button>
             <p id="login-error" class="text-red-400 text-xs mt-4 text-center hidden"></p>
@@ -244,12 +249,12 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="text-xs text-gray-500 mb-1 block">Daftar Barang (Format JSON)</label>
+                    <label class="text-xs text-gray-500 mb-1 block">Daftar Barang</label>
                     <textarea id="modal-items" class="form-input font-mono text-xs" rows="4" placeholder='[{"name":"Barang A","price":10000,"quantity":2}]'></textarea>
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="text-xs text-gray-500 mb-1 block">ID Pelanggan (Format JSON)</label>
+                    <label class="text-xs text-gray-500 mb-1 block">ID Pelanggan</label>
                     <textarea id="modal-idPelanggan" class="form-input font-mono text-xs" rows="3" placeholder='{"0":["12345678"]}'>'></textarea>
                 </div>
             </div>
@@ -304,6 +309,20 @@
                 }
             });
         });
+        function toggleAdminPassword(btnEl) {
+            const input = document.getElementById('admin-pass');
+            const icon = btnEl.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
         function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
@@ -370,7 +389,6 @@
                 else if (d.status === 'Unit Belum Diserahkan' || d.status === 'Sedang Ditinjau') statusClass = 'badge-orange';
                 else if (d.status === 'Sedang Dalam Pengiriman') statusClass = 'badge-blue';
 
-                // Format detail barang
                 let itemsText = d.items ? d.items.map(item => `${item.name} (x${item.quantity})`).join(', ') : '-';
                 if (itemsText.length > 50) itemsText = itemsText.substring(0, 50) + '...';
 
@@ -399,11 +417,10 @@
         function filterTable() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const statusFilter = document.getElementById('filter-status').value;
-
             const filtered = allOrders.filter(order => {
-                const d = order.data;
-                const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
-                const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
+            const d = order.data;
+            const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
+            const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
                 return matchesSearch && matchesStatus;
             });
 
