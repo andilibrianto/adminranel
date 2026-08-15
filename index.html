@@ -189,7 +189,7 @@
                     <thead>
                         <tr>
                             <th>Identifier (Email)</th>
-                            <th>Providers</th>
+                            <th>Nama Lengkap</th>
                             <th>Created</th>
                             <th>LastSeen</th>
                             <th>Telp</th>
@@ -666,23 +666,15 @@
                             }
                         }
 
-                        // Tentukan Provider
-                        let provider = '-';
-                        if (d.provider) {
-                            provider = d.provider.includes('google') ? 'Google' : 'Email/Password';
-                        } else if (d.email) {
-                            provider = d.email.endsWith('@gmail.com') ? 'Google (Dugaan)' : 'Email/Password';
-                        }
-
-                        return `
-                            <tr>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
-                                <td class="text-xs"><span class="badge badge-blue">${provider}</span></td>
-                                <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
-                                <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
-                            </tr>
-                        `;
+                                            return `
+                        <tr>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
+                        </tr>
+                    `;
                     }).join('');
 
                     // Sembunyikan loading setelah data pertama kali selesai dimuat
