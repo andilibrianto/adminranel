@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ranel-admin-0.0.0.0.8';
+const CACHE_NAME = 'ranel-admin-0.0.0.0.9';
 const urlsToCache = [
     './admin.html',
     './admin-manifest.json',
