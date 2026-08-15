@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="ADMIN RANEL">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-        <script type="module">
+    <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-        import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js'; // Tambahan
+        import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-        import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+        import { getFirestore, collection, query, onSnapshot, doc, updateDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDmDyI5olQ2a0zaxLIASH3EglRfsAmE7-Q",
@@ -37,7 +37,7 @@
         const db = getFirestore(app);
 
         window.firebaseAdmin = {
-            auth, db, collection, query, orderBy, onSnapshot, doc, updateDoc, getDocs,
+            auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs,
             signInWithEmailAndPassword, signOut, onAuthStateChanged
         };
         window.dispatchEvent(new Event('firebase-admin-ready'));
@@ -62,7 +62,7 @@
         .card { background:#141414; border:1px solid #222; border-radius:14px; }
         .form-input { width:100%; background:#0e0e0e; border:1px solid #2a2a2a; border-radius:10px; padding:12px 14px; color:#fff; outline:none; }
         .form-input:focus { border-color:#FF2D78; }
-        .btn-pk { background:linear-gradient(135deg, #FF2D78, #FF6B9D); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:600; cursor:pointer; }
+        .btn-pk { background:linear-gradient(135deg, #FF2D78, #FF6B9D); color:#fff; border:none; border-radius:10px; padding:10px 20px; font-weight:600; cursor:pointer; }
         .btn-outline { background:transparent; color:#FF2D78; border:1.5px solid #FF2D78; border-radius:10px; padding:10px 20px; font-weight:600; cursor:pointer; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #222; font-size: 14px; }
@@ -73,16 +73,8 @@
         .badge-red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
         .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
         .badge-orange { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
-        .loading-dots::after {
-            content: '';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-        @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
-        }
+        .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+        @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -121,7 +113,6 @@
     </div>
 
     <div id="dashboard-view" class="hidden w-full max-w-6xl my-8">
-        
         <header class="flex justify-between items-center mb-8">
             <div>
                 <h1 class="text-2xl font-bold">Backoffice Ranel</h1>
@@ -132,33 +123,31 @@
             </button>
         </header>
 
-        <!-- Navigasi Tab -->
         <div class="flex gap-2 mb-6">
             <button onclick="switchTab('orders')" id="tab-orders" class="btn-pk text-sm">Riwayat Pesanan</button>
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm">Data Pengguna</button>
         </div>
 
-        <!-- View Transaksi -->
         <div id="view-orders">
             <div class="card p-4 mb-6 flex gap-4">
                 <div class="flex-1">
                     <input type="text" id="search-input" placeholder="Cari ID Transaksi atau Nama..." class="form-input" oninput="filterTable()">
                 </div>
                 <select id="filter-status" class="form-input w-48" onchange="filterTable()">
-                <option value="">Semua Status</option>
-                <option>Menunggu Pembayaran</option>
-                <option>Sedang Dalam Proses</option>
-                <option>Sedang Dalam Pengiriman</option>
-                <option>Sedang Ditinjau</option>
-                <option>Proses Perbaikkan/Service</option>
-                <option>Pengiriman Unit</option>
-                <option>Penjemputan Unit</option>
-                <option>Proses Cek Unit</option>
-                <option>Unit Belum Diserahkan</option>
-                <option>Berhasil</option>
-                <option>Berhasil Ditinjau</option>
-                <option>Gagal</option>
-                <option>Refund</option>
+                    <option value="">Semua Status</option>
+                    <option>Menunggu Pembayaran</option>
+                    <option>Sedang Dalam Proses</option>
+                    <option>Sedang Dalam Pengiriman</option>
+                    <option>Sedang Ditinjau</option>
+                    <option>Proses Perbaikkan/Service</option>
+                    <option>Pengiriman Unit</option>
+                    <option>Penjemputan Unit</option>
+                    <option>Proses Cek Unit</option>
+                    <option>Unit Belum Diserahkan</option>
+                    <option>Berhasil</option>
+                    <option>Berhasil Ditinjau</option>
+                    <option>Gagal</option>
+                    <option>Refund</option>
                 </select>
             </div>
 
@@ -176,15 +165,12 @@
                         </tr>
                     </thead>
                     <tbody id="orders-table-body">
-                        <tr>
-                            <td colspan="7" class="text-center text-gray-500 py-8">Memuat data transaksi...</td>
-                        </tr>
+                        <tr><td colspan="7" class="text-center text-gray-500 py-8">Memuat data transaksi...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- View Pengguna -->
         <div id="view-users" class="hidden">
             <div class="card overflow-x-auto">
                 <table>
@@ -193,18 +179,17 @@
                             <th>Email</th>
                             <th>Nama Lengkap</th>
                             <th>Akun Dibuat</th>
-                            <th>Terahkir Online</th>
+                            <th>Terakhir Online</th>
                             <th>Nomor Telepon</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body">
-                        <tr>
-                            <td colspan="5" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data pengguna.</td>
-                        </tr>
+                        <tr><td colspan="5" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data pengguna.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>
 
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
@@ -218,7 +203,6 @@
                     <label class="text-xs text-gray-500 mb-1 block">ID Transaksi (Tidak Bisa Diubah)</label>
                     <input type="text" id="modal-order-id" class="form-input text-pk font-bold" readonly>
                 </div>
-
                 <div>
                     <label class="text-xs text-gray-500 mb-1 block">Nama Pelanggan</label>
                     <input type="text" id="modal-userName" class="form-input">
@@ -277,23 +261,19 @@
                         <option value="deliver">deliver</option>
                     </select>
                 </div>
-
                 <div class="md:col-span-2">
                     <label class="text-xs text-gray-500 mb-1 block">Alamat</label>
                     <textarea id="modal-address" class="form-input" rows="2"></textarea>
                 </div>
-
                 <div class="md:col-span-2">
                     <label class="text-xs text-gray-500 mb-1 block">Kode Promo</label>
                     <input type="text" id="modal-promoCode" class="form-input">
                 </div>
-
                 <div class="md:col-span-2">
                     <label class="text-xs text-gray-500 mb-1 block">Daftar Barang & ID Pelanggan</label>
                     <div id="modal-items-container" class="space-y-3"></div>
                 </div>
             </div>
-
             <button onclick="saveDataChange()" class="btn-pk w-full mt-6">Simpan Perubahan</button>
             <button onclick="closeEditModal()" class="btn-outline w-full mt-3">Batal</button>
         </div>
@@ -303,20 +283,6 @@
         let currentDocId = null;
         let allOrders = [];
 
-        window.addEventListener('firebase-admin-ready', function() {
-            const { auth, onAuthStateChanged } = window.firebaseAdmin;
-
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    document.getElementById('login-view').classList.add('hidden');
-                    document.getElementById('dashboard-view').classList.remove('hidden');
-                    loadOrders();
-                } else {
-                    document.getElementById('login-view').classList.remove('hidden');
-                    document.getElementById('dashboard-view').classList.add('hidden');
-                }
-            });
-        });
         function showLoading() {
             const el = document.getElementById('loading-overlay');
             if (el) el.classList.remove('hidden');
@@ -328,12 +294,9 @@
 
         window.addEventListener('firebase-admin-ready', function() {
             const { auth, onAuthStateChanged } = window.firebaseAdmin;
-
             showLoading();
-
             onAuthStateChanged(auth, (user) => {
                 hideLoading();
-
                 if (user) {
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('dashboard-view').classList.remove('hidden');
@@ -344,10 +307,10 @@
                 }
             });
         });
+
         function toggleAdminPassword(btnEl) {
             const input = document.getElementById('admin-pass');
             const icon = btnEl.querySelector('i');
-            
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');
@@ -358,104 +321,78 @@
                 icon.classList.add('fa-eye');
             }
         }
+
         function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
-            
-            // Tampilkan loading saat tombol login diklik
             showLoading();
-            
             window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
-                                .then(() => {
+                .then(() => {
                     errorEl.classList.add('hidden');
-                    // HAPUS KOLOM EMAIL & PASSWORD begitu login berhasil
                     document.getElementById('admin-email').value = '';
                     document.getElementById('admin-pass').value = '';
-                    
-                    // MINTA IZIN NOTIFIKASI setelah login berhasil
                     requestNotificationPermission();
                 })
                 .catch(err => {
-                    // Sembunyikan loading jika gagal login
                     hideLoading();
-                    
                     let msg = "Terjadi error. Cek console (F12).";
-                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar di Firebase Auth.";
+                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar.";
                     else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
                     else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
-                    else if (err.code === 'auth/network-request-failed') msg = "Jaringan internet bermasalah.";
-                    else if (err.code === 'auth/too-many-requests') msg = "Terlalu banyak percobaan login gagal. Coba lagi nanti.";
-                    
                     errorEl.textContent = msg;
                     errorEl.classList.remove('hidden');
                 });
         }
         function adminLogout() {
-            // HAPUS KOLOM EMAIL & PASSWORD saat logout (jaga-jaga jika ada sisa teks)
             document.getElementById('admin-email').value = '';
             document.getElementById('admin-pass').value = '';
-            
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
-                // Variabel untuk mengecek apakah ini load pertama kali
-        let isInitialLoadOrders = true;
 
+        let isInitialLoadOrders = true;
         function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
-            
             if (allOrders.length === 0) showLoading();
-
             const q = query(collection(db, "Riwayat_Pesanan"));
-            
             onSnapshot(q, (snapshot) => {
                 let newOrdersCount = 0;
                 let latestNewOrder = null;
-
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         newOrdersCount++;
                         latestNewOrder = change.doc.data();
                     }
                 });
-
-                // Jika BUKAN load pertama kali DAN ada pesanan baru masuk
                 if (!isInitialLoadOrders && newOrdersCount > 0 && latestNewOrder) {
                     showOrderNotification(latestNewOrder);
                 }
-
                 allOrders = [];
                 snapshot.forEach((doc) => {
                     allOrders.push({ id: doc.id, data: doc.data() });
                 });
-
                 allOrders.sort((a, b) => {
                     let dateA = a.data.transactionDate || '';
                     let dateB = b.data.transactionDate || '';
                     return dateB.localeCompare(dateA);
                 });
-
                 renderTable(allOrders);
                 hideLoading();
-
-                // Setelah load pertama kali selesai, ubah flag menjadi false
                 isInitialLoadOrders = false;
-
             }, (error) => {
                 console.error("Error fetching orders: ", error);
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules Anda.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
                 hideLoading();
             });
         }
+
         function renderTable(orders) {
             const tbody = document.getElementById('orders-table-body');
-            
             if (orders.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada transaksi ditemukan.</td></tr>`;
                 return;
             }
-
             tbody.innerHTML = orders.map(order => {
                 const d = order.data;
                 let statusClass = 'badge-yellow';
@@ -463,12 +400,9 @@
                 else if (d.status === 'Gagal' || d.status === 'Refund') statusClass = 'badge-red';
                 else if (d.status === 'Unit Belum Diserahkan' || d.status === 'Sedang Ditinjau') statusClass = 'badge-orange';
                 else if (d.status === 'Sedang Dalam Pengiriman') statusClass = 'badge-blue';
-
                 let itemsText = d.items ? d.items.map(item => `${item.name} (x${item.quantity})`).join(', ') : '-';
                 if (itemsText.length > 50) itemsText = itemsText.substring(0, 50) + '...';
-
                 const total = d.total ? `Rp ${d.total.toLocaleString('id-ID')}` : 'Rp 0';
-
                 return `
                     <tr>
                         <td class="text-gray-400 whitespace-nowrap text-xs">${d.transactionDate || '-'}</td>
@@ -489,25 +423,24 @@
                 `;
             }).join('');
         }
+
         function filterTable() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const statusFilter = document.getElementById('filter-status').value;
             const filtered = allOrders.filter(order => {
-            const d = order.data;
-            const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
-            const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
+                const d = order.data;
+                const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
+                const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
                 return matchesSearch && matchesStatus;
             });
-
             renderTable(filtered);
         }
-                function openEditModal(docId) {
+
+        function openEditModal(docId) {
             currentDocId = docId;
             const orderObj = allOrders.find(o => o.id === docId);
             if (!orderObj) return;
-            
             const d = orderObj.data;
-            
             document.getElementById('modal-order-id').value = docId;
             document.getElementById('modal-userName').value = d.userName || '';
             document.getElementById('modal-userTelp').value = d.userTelp || '';
@@ -521,16 +454,11 @@
             document.getElementById('modal-shippingMode').value = d.shippingMode || '';
             document.getElementById('modal-address').value = d.address || '';
             document.getElementById('modal-promoCode').value = d.promoCode || '';
-            
-            // Buat Form Dinamis untuk Daftar Barang
             const itemsContainer = document.getElementById('modal-items-container');
-            itemsContainer.innerHTML = ''; // Kosongkan dulu
-            
+            itemsContainer.innerHTML = '';
             if (d.items && d.items.length > 0) {
                 d.items.forEach((item, idx) => {
-                    // Cek apakah ada ID Pelanggan untuk barang ini
                     const idPels = (d.idPelanggan && d.idPelanggan[idx]) ? d.idPelanggan[idx].join(', ') : '';
-                    
                     itemsContainer.innerHTML += `
                         <div class="p-3 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
                             <div class="mb-2 text-[11px] text-gray-500">Barang ${idx + 1}</div>
@@ -550,7 +478,7 @@
                             </div>
                             ${idPels !== '' ? `
                             <div class="mt-2 pt-2 border-t border-[#222]">
-                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/baris baru jika lebih dari 1)</label>
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/baris baru)</label>
                                 <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="3" style="resize: vertical;">${idPels}</textarea>
                             </div>
                             ` : ''}
@@ -560,44 +488,32 @@
             } else {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Tidak ada barang.</p>';
             }
-            
             document.getElementById('edit-modal').classList.remove('hidden');
         }
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
             currentDocId = null;
         }
-                async function saveDataChange() {
+        async function saveDataChange() {
             if (!currentDocId) return;
-            
             try {
-                // 1. Kumpulkan Data Barang & ID Pelanggan dari Form Dinamis
                 let updatedItems = [];
                 let updatedIdPelanggan = {};
-                
                 document.querySelectorAll('.modal-item-name').forEach((nameInput) => {
                     const idx = nameInput.dataset.idx;
                     const priceInput = document.querySelector(`.modal-item-price[data-idx="${idx}"]`);
                     const qtyInput = document.querySelector(`.modal-item-qty[data-idx="${idx}"]`);
                     const idpelInput = document.querySelector(`.modal-item-idpel[data-idx="${idx}"]`);
-                    
-                    // Masukkan ke Array Barang
                     updatedItems.push({
                         name: nameInput.value,
                         price: parseInt(priceInput.value) || 0,
                         quantity: parseInt(qtyInput.value) || 1
                     });
-
-                    // Jika ada ID Pelanggan, masukkan ke Object (Pisahkan berdasarkan baris baru/Enter)
                     if (idpelInput) {
                         const ids = idpelInput.value.split('\n').map(id => id.trim()).filter(id => id !== '');
-                        if (ids.length > 0) {
-                            updatedIdPelanggan[idx] = ids;
-                        }
+                        if (ids.length > 0) updatedIdPelanggan[idx] = ids;
                     }
                 });
-
-                // 2. Ambil semua nilai dari form utama
                 const updatedData = {
                     userName: document.getElementById('modal-userName').value,
                     userTelp: document.getElementById('modal-userTelp').value,
@@ -614,20 +530,16 @@
                     items: updatedItems,
                     idPelanggan: updatedIdPelanggan
                 };
-
                 const { db, doc, updateDoc } = window.firebaseAdmin;
                 const orderRef = doc(db, "Riwayat_Pesanan", currentDocId);
-                
                 await updateDoc(orderRef, updatedData);
-                
                 showToast("Data transaksi berhasil diperbarui!");
                 closeEditModal();
             } catch (err) {
-                console.error("Error updating data: ", err);
                 alert("Gagal menyimpan data. Mohon cek kembali isian form.");
             }
         }
-        // --- FUNGSI TAB NAVIGASI ---
+
         function switchTab(tabName) {
             if (tabName === 'orders') {
                 document.getElementById('view-orders').classList.remove('hidden');
@@ -639,116 +551,80 @@
                 document.getElementById('view-users').classList.remove('hidden');
                 document.getElementById('tab-orders').className = 'btn-outline text-sm';
                 document.getElementById('tab-users').className = 'btn-pk text-sm';
-                
-                // Muat data pengguna hanya jika tabel masih kosong
                 const tbody = document.getElementById('users-table-body');
-                if (tbody.innerHTML.includes('Klik tab ini')) {
-                    loadUsers();
-                }
+                if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
             }
         }
 
-                // --- FUNGSI AMBIL DATA PENGGUNA (REAL-TIME) ---
         function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
-            
             showLoading();
             try {
                 const { db, collection, query, onSnapshot } = window.firebaseAdmin;
                 const q = query(collection(db, "users"));
-                
-                // Gunakan onSnapshot agar data pengguna real-time
                 onSnapshot(q, (snapshot) => {
                     let usersData = [];
-                    snapshot.forEach((doc) => {
-                        usersData.push(doc.data());
-                    });
-
-                    // Urutkan berdasarkan waktu terakhir online (LastSeen terbaru di atas)
-                    usersData.sort((a, b) => {
-                        let timeA = a.LastSeen || '';
-                        let timeB = b.LastSeen || '';
-                        return timeB.localeCompare(timeA);
-                    });
-
+                    snapshot.forEach((doc) => usersData.push(doc.data()));
+                    usersData.sort((a, b) => (b.LastSeen || '').localeCompare(a.LastSeen || ''));
                     if (usersData.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data pengguna.</td></tr>`;
-                        hideLoading();
-                        return;
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`;
+                        hideLoading(); return;
                     }
-
                     tbody.innerHTML = usersData.map(d => {
-                        // Format waktu pembuatan akun
                         let createdDate = '-';
                         if (d.createdAt) {
-                            try {
-                                createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                            } catch(e) {
-                                createdDate = d.createdAt;
-                            }
+                            try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } 
+                            catch(e) { createdDate = d.createdAt; }
                         }
-
-                                            return `
-                        <tr>
-                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
-                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
-                            <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
-                            <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
-                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
-                        </tr>
-                    `;
+                        return `
+                            <tr>
+                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
+                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
+                                <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
+                                <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
+                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
+                            </tr>
+                        `;
                     }).join('');
-
-                    // Sembunyikan loading setelah data pertama kali selesai dimuat
                     hideLoading();
-
                 }, (error) => {
-                    console.error("Error fetching users: ", error);
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
                     hideLoading();
                 });
-
-            } catch (err) {
-                console.error("Error setup users listener: ", err);
-                hideLoading();
-            }
+            } catch (err) { hideLoading(); }
         }
-        // --- FUNGSI NOTIFIKASI PESANAN BARU ---
+
         function requestNotificationPermission() {
-            if (!('Notification' in window)) {
-                console.log('Browser tidak mendukung notifikasi');
-                return;
-            }
+            if (!('Notification' in window)) return;
             if (Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        showToast('Notifikasi pesanan baru diaktifkan!');
-                    }
+                    if (permission === 'granted') showToast('Notifikasi pesanan baru diaktifkan!');
                 });
             }
         }
-
         function showOrderNotification(orderData) {
             if (Notification.permission === 'granted') {
                 const total = orderData.total ? `Rp ${orderData.total.toLocaleString('id-ID')}` : 'Rp 0';
                 let itemsText = orderData.items ? orderData.items.map(item => `${item.name}`).join(', ') : '-';
                 if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
-
-                const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', {
+                const options = {
                     body: `${orderData.userName || 'Pelanggan'} - ${itemsText}\nTotal: ${total}`,
-                    icon: './Gambar/Logo_BL_intuls_NoBCKG.png',
-                    badge: './Gambar/Logo_BL_intuls_NoBCKG.png',
+                    icon: 'Logo_WH_intuls-removebg-preview.png',
+                    badge: 'Logo_WH_intuls-removebg-preview.png',
                     tag: 'new-order-' + Date.now()
-                });
-
-                // Jika notifikasi diklik, fokuskan layar ke aplikasi
-                notif.onclick = () => {
-                    window.focus();
-                    notif.close();
                 };
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification('🔔 Pesanan Baru RANEL CELL!', options);
+                    });
+                } else {
+                    const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', options);
+                    notif.onclick = () => { window.focus(); notif.close(); };
+                }
             }
         }
+
         function showToast(msg) {
             const t = document.createElement('div');
             t.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 font-medium text-sm';
@@ -756,9 +632,10 @@
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
+                navigator.serviceWorker.register('admin-sw.js').catch(err => console.log('SW Admin gagal:', err));
             });
         }
     </script>
