@@ -14,6 +14,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
         import { getFirestore, collection, query, onSnapshot, doc, updateDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -27,6 +28,11 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6Le6GHotAAAAANiAaJBAx3UoO3DY8EfPVush6jAs'),
+            isTokenAutoRefreshEnabled: true
+        });
+
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -597,31 +603,25 @@
                 });
             }
         }
-                function showOrderNotification(orderData) {
-            if (!('Notification' in window)) return;
-            
+        function showOrderNotification(orderData) {
             if (Notification.permission === 'granted') {
                 const total = orderData.total ? `Rp ${orderData.total.toLocaleString('id-ID')}` : 'Rp 0';
                 let itemsText = orderData.items ? orderData.items.map(item => `${item.name}`).join(', ') : '-';
                 if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
-                
                 const options = {
                     body: `${orderData.userName || 'Pelanggan'} - ${itemsText}\nTotal: ${total}`,
                     icon: 'Logo_WH_intuls-removebg-preview.png',
                     badge: 'Logo_WH_intuls-removebg-preview.png',
-                    tag: 'new-order-' + Date.now(),
-                    vibrate: [200, 100, 200] // Getaran saat notifikasi muncul
+                    tag: 'new-order-' + Date.now()
                 };
-
-                try {
-                    // Gunakan Notification API standar
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification('🔔 Pesanan Baru RANEL CELL!', options);
+                    });
+                } else {
                     const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', options);
                     notif.onclick = () => { window.focus(); notif.close(); };
-                } catch (e) {
-                    console.error("Gagal membuat notifikasi:", e);
                 }
-            } else {
-                console.log("Izin notifikasi belum diberikan.");
             }
         }
 
