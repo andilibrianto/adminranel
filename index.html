@@ -32,10 +32,7 @@
 
         const app = initializeApp(firebaseConfig);
         const messaging = firebase.messaging(app);
-        const appCheck = initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6Le6GHotAAAAANiAaJBAx3UoO3DY8EfPVush6jAs'),
-            isTokenAutoRefreshEnabled: true
-        });
+        
         // Tangani notifikasi saat aplikasi di latar belakang / ditutup
     messaging.onBackgroundMessage((payload) => {
     console.log('Notifikasi diterima di background: ', payload);

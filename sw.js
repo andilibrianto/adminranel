@@ -1,7 +1,7 @@
 const CACHE_NAME = 'ranel-admin-0.0.0.2.2';
 const urlsToCache = [
-    './admin.html',
-    './admin-manifest.json',
+    './index.html',
+    './manifest.json',
     'https://cdn.tailwindcss.com',
     'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
@@ -15,7 +15,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
-    if (event.request.url.includes('admin.html') || event.request.mode === 'navigate') {
+    if (event.request.url.includes('index.html') || event.request.mode === 'navigate') {
         event.respondWith(fetch(event.request));
         return;
     }
