@@ -300,27 +300,13 @@
     </div>
 
     <script>
-            <script>
         let currentDocId = null;
         let allOrders = [];
 
-        // Fungsi Loading Overlay
-        function showLoading() {
-            const el = document.getElementById('loading-overlay');
-            if (el) el.classList.remove('hidden');
-        }
-        function hideLoading() {
-            const el = document.getElementById('loading-overlay');
-            if (el) el.classList.add('hidden');
-        }
-
-        // Cek Auth State
         window.addEventListener('firebase-admin-ready', function() {
             const { auth, onAuthStateChanged } = window.firebaseAdmin;
-            showLoading();
 
             onAuthStateChanged(auth, (user) => {
-                hideLoading();
                 if (user) {
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('dashboard-view').classList.remove('hidden');
@@ -331,11 +317,37 @@
                 }
             });
         });
+        function showLoading() {
+            const el = document.getElementById('loading-overlay');
+            if (el) el.classList.remove('hidden');
+        }
+        function hideLoading() {
+            const el = document.getElementById('loading-overlay');
+            if (el) el.classList.add('hidden');
+        }
 
-        // Toggle Password
+        window.addEventListener('firebase-admin-ready', function() {
+            const { auth, onAuthStateChanged } = window.firebaseAdmin;
+
+            showLoading();
+
+            onAuthStateChanged(auth, (user) => {
+                hideLoading();
+
+                if (user) {
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('dashboard-view').classList.remove('hidden');
+                    loadOrders();
+                } else {
+                    document.getElementById('login-view').classList.remove('hidden');
+                    document.getElementById('dashboard-view').classList.add('hidden');
+                }
+            });
+        });
         function toggleAdminPassword(btnEl) {
             const input = document.getElementById('admin-pass');
             const icon = btnEl.querySelector('i');
+            
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');
@@ -346,46 +358,57 @@
                 icon.classList.add('fa-eye');
             }
         }
-
-        // Login & Logout
         function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
+            
+            // Tampilkan loading saat tombol login diklik
             showLoading();
             
             window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
-                .then(() => {
+                                .then(() => {
                     errorEl.classList.add('hidden');
+                    // HAPUS KOLOM EMAIL & PASSWORD begitu login berhasil
                     document.getElementById('admin-email').value = '';
                     document.getElementById('admin-pass').value = '';
+                    
+                    // MINTA IZIN NOTIFIKASI setelah login berhasil
                     requestNotificationPermission();
                 })
                 .catch(err => {
+                    // Sembunyikan loading jika gagal login
                     hideLoading();
+                    
                     let msg = "Terjadi error. Cek console (F12).";
-                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar.";
+                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar di Firebase Auth.";
                     else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
                     else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
                     else if (err.code === 'auth/network-request-failed') msg = "Jaringan internet bermasalah.";
+                    else if (err.code === 'auth/too-many-requests') msg = "Terlalu banyak percobaan login gagal. Coba lagi nanti.";
+                    
                     errorEl.textContent = msg;
                     errorEl.classList.remove('hidden');
                 });
         }
         function adminLogout() {
+            // HAPUS KOLOM EMAIL & PASSWORD saat logout (jaga-jaga jika ada sisa teks)
             document.getElementById('admin-email').value = '';
             document.getElementById('admin-pass').value = '';
+            
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
-
-        // Load Orders (Realtime)
+                // Variabel untuk mengecek apakah ini load pertama kali
         let isInitialLoadOrders = true;
+
         function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
+            
             if (allOrders.length === 0) showLoading();
 
             const q = query(collection(db, "Riwayat_Pesanan"));
+            
             onSnapshot(q, (snapshot) => {
                 let newOrdersCount = 0;
                 let latestNewOrder = null;
@@ -397,6 +420,7 @@
                     }
                 });
 
+                // Jika BUKAN load pertama kali DAN ada pesanan baru masuk
                 if (!isInitialLoadOrders && newOrdersCount > 0 && latestNewOrder) {
                     showOrderNotification(latestNewOrder);
                 }
@@ -414,20 +438,24 @@
 
                 renderTable(allOrders);
                 hideLoading();
+
+                // Setelah load pertama kali selesai, ubah flag menjadi false
                 isInitialLoadOrders = false;
+
             }, (error) => {
                 console.error("Error fetching orders: ", error);
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules Anda.</td></tr>`;
                 hideLoading();
             });
         }
-
         function renderTable(orders) {
             const tbody = document.getElementById('orders-table-body');
+            
             if (orders.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada transaksi ditemukan.</td></tr>`;
                 return;
             }
+
             tbody.innerHTML = orders.map(order => {
                 const d = order.data;
                 let statusClass = 'badge-yellow';
@@ -438,6 +466,7 @@
 
                 let itemsText = d.items ? d.items.map(item => `${item.name} (x${item.quantity})`).join(', ') : '-';
                 if (itemsText.length > 50) itemsText = itemsText.substring(0, 50) + '...';
+
                 const total = d.total ? `Rp ${d.total.toLocaleString('id-ID')}` : 'Rp 0';
 
                 return `
@@ -460,24 +489,23 @@
                 `;
             }).join('');
         }
-
         function filterTable() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const statusFilter = document.getElementById('filter-status').value;
             const filtered = allOrders.filter(order => {
-                const d = order.data;
-                const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
-                const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
+            const d = order.data;
+            const matchesSearch = (order.id.toLowerCase().includes(searchTerm) || (d.userName || '').toLowerCase().includes(searchTerm));
+            const matchesStatus = statusFilter ? (d.status === statusFilter) : true;
                 return matchesSearch && matchesStatus;
             });
+
             renderTable(filtered);
         }
-
-        // Edit Modal
-        function openEditModal(docId) {
+                function openEditModal(docId) {
             currentDocId = docId;
             const orderObj = allOrders.find(o => o.id === docId);
             if (!orderObj) return;
+            
             const d = orderObj.data;
             
             document.getElementById('modal-order-id').value = docId;
@@ -494,11 +522,15 @@
             document.getElementById('modal-address').value = d.address || '';
             document.getElementById('modal-promoCode').value = d.promoCode || '';
             
+            // Buat Form Dinamis untuk Daftar Barang
             const itemsContainer = document.getElementById('modal-items-container');
-            itemsContainer.innerHTML = '';
+            itemsContainer.innerHTML = ''; // Kosongkan dulu
+            
             if (d.items && d.items.length > 0) {
                 d.items.forEach((item, idx) => {
+                    // Cek apakah ada ID Pelanggan untuk barang ini
                     const idPels = (d.idPelanggan && d.idPelanggan[idx]) ? d.idPelanggan[idx].join(', ') : '';
+                    
                     itemsContainer.innerHTML += `
                         <div class="p-3 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
                             <div class="mb-2 text-[11px] text-gray-500">Barang ${idx + 1}</div>
@@ -518,7 +550,7 @@
                             </div>
                             ${idPels !== '' ? `
                             <div class="mt-2 pt-2 border-t border-[#222]">
-                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/baris baru)</label>
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/baris baru jika lebih dari 1)</label>
                                 <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="3" style="resize: vertical;">${idPels}</textarea>
                             </div>
                             ` : ''}
@@ -528,32 +560,44 @@
             } else {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Tidak ada barang.</p>';
             }
+            
             document.getElementById('edit-modal').classList.remove('hidden');
         }
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
             currentDocId = null;
         }
-        async function saveDataChange() {
+                async function saveDataChange() {
             if (!currentDocId) return;
+            
             try {
+                // 1. Kumpulkan Data Barang & ID Pelanggan dari Form Dinamis
                 let updatedItems = [];
                 let updatedIdPelanggan = {};
+                
                 document.querySelectorAll('.modal-item-name').forEach((nameInput) => {
                     const idx = nameInput.dataset.idx;
                     const priceInput = document.querySelector(`.modal-item-price[data-idx="${idx}"]`);
                     const qtyInput = document.querySelector(`.modal-item-qty[data-idx="${idx}"]`);
                     const idpelInput = document.querySelector(`.modal-item-idpel[data-idx="${idx}"]`);
+                    
+                    // Masukkan ke Array Barang
                     updatedItems.push({
                         name: nameInput.value,
                         price: parseInt(priceInput.value) || 0,
                         quantity: parseInt(qtyInput.value) || 1
                     });
+
+                    // Jika ada ID Pelanggan, masukkan ke Object (Pisahkan berdasarkan baris baru/Enter)
                     if (idpelInput) {
                         const ids = idpelInput.value.split('\n').map(id => id.trim()).filter(id => id !== '');
-                        if (ids.length > 0) updatedIdPelanggan[idx] = ids;
+                        if (ids.length > 0) {
+                            updatedIdPelanggan[idx] = ids;
+                        }
                     }
                 });
+
+                // 2. Ambil semua nilai dari form utama
                 const updatedData = {
                     userName: document.getElementById('modal-userName').value,
                     userTelp: document.getElementById('modal-userTelp').value,
@@ -570,17 +614,20 @@
                     items: updatedItems,
                     idPelanggan: updatedIdPelanggan
                 };
+
                 const { db, doc, updateDoc } = window.firebaseAdmin;
                 const orderRef = doc(db, "Riwayat_Pesanan", currentDocId);
+                
                 await updateDoc(orderRef, updatedData);
+                
                 showToast("Data transaksi berhasil diperbarui!");
                 closeEditModal();
             } catch (err) {
+                console.error("Error updating data: ", err);
                 alert("Gagal menyimpan data. Mohon cek kembali isian form.");
             }
         }
-
-        // Tab Navigation
+        // --- FUNGSI TAB NAVIGASI ---
         function switchTab(tabName) {
             if (tabName === 'orders') {
                 document.getElementById('view-orders').classList.remove('hidden');
@@ -592,86 +639,116 @@
                 document.getElementById('view-users').classList.remove('hidden');
                 document.getElementById('tab-orders').className = 'btn-outline text-sm';
                 document.getElementById('tab-users').className = 'btn-pk text-sm';
+                
+                // Muat data pengguna hanya jika tabel masih kosong
                 const tbody = document.getElementById('users-table-body');
-                if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
+                if (tbody.innerHTML.includes('Klik tab ini')) {
+                    loadUsers();
+                }
             }
         }
 
-        // Load Users (Realtime)
+                // --- FUNGSI AMBIL DATA PENGGUNA (REAL-TIME) ---
         function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
+            
             showLoading();
             try {
                 const { db, collection, query, onSnapshot } = window.firebaseAdmin;
                 const q = query(collection(db, "users"));
+                
+                // Gunakan onSnapshot agar data pengguna real-time
                 onSnapshot(q, (snapshot) => {
                     let usersData = [];
-                    snapshot.forEach((doc) => usersData.push(doc.data()));
-                    usersData.sort((a, b) => (b.LastSeen || '').localeCompare(a.LastSeen || ''));
+                    snapshot.forEach((doc) => {
+                        usersData.push(doc.data());
+                    });
+
+                    // Urutkan berdasarkan waktu terakhir online (LastSeen terbaru di atas)
+                    usersData.sort((a, b) => {
+                        let timeA = a.LastSeen || '';
+                        let timeB = b.LastSeen || '';
+                        return timeB.localeCompare(timeA);
+                    });
+
                     if (usersData.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`;
-                        hideLoading(); return;
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data pengguna.</td></tr>`;
+                        hideLoading();
+                        return;
                     }
+
                     tbody.innerHTML = usersData.map(d => {
+                        // Format waktu pembuatan akun
                         let createdDate = '-';
                         if (d.createdAt) {
-                            try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } 
-                            catch(e) { createdDate = d.createdAt; }
+                            try {
+                                createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            } catch(e) {
+                                createdDate = d.createdAt;
+                            }
                         }
-                        return `
-                            <tr>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
-                                <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
-                                <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
-                            </tr>
-                        `;
+
+                                            return `
+                        <tr>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
+                        </tr>
+                    `;
                     }).join('');
+
+                    // Sembunyikan loading setelah data pertama kali selesai dimuat
                     hideLoading();
+
                 }, (error) => {
                     console.error("Error fetching users: ", error);
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules.</td></tr>`;
                     hideLoading();
                 });
-            } catch (err) { hideLoading(); }
-        }
 
-        // Notification Setup (Support PWA)
+            } catch (err) {
+                console.error("Error setup users listener: ", err);
+                hideLoading();
+            }
+        }
+        // --- FUNGSI NOTIFIKASI PESANAN BARU ---
         function requestNotificationPermission() {
-            if (!('Notification' in window)) return;
+            if (!('Notification' in window)) {
+                console.log('Browser tidak mendukung notifikasi');
+                return;
+            }
             if (Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') showToast('Notifikasi pesanan baru diaktifkan!');
+                    if (permission === 'granted') {
+                        showToast('Notifikasi pesanan baru diaktifkan!');
+                    }
                 });
             }
         }
+
         function showOrderNotification(orderData) {
             if (Notification.permission === 'granted') {
                 const total = orderData.total ? `Rp ${orderData.total.toLocaleString('id-ID')}` : 'Rp 0';
                 let itemsText = orderData.items ? orderData.items.map(item => `${item.name}`).join(', ') : '-';
                 if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
-                
-                const options = {
+
+                const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', {
                     body: `${orderData.userName || 'Pelanggan'} - ${itemsText}\nTotal: ${total}`,
                     icon: './Gambar/Logo_BL_intuls_NoBCKG.png',
                     badge: './Gambar/Logo_BL_intuls_NoBCKG.png',
                     tag: 'new-order-' + Date.now()
-                };
+                });
 
-                // Gunakan Service Worker jika PWA, jika tidak pakai standar
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.ready.then(registration => {
-                        registration.showNotification('🔔 Pesanan Baru RANEL CELL!', options);
-                    });
-                } else {
-                    const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', options);
-                    notif.onclick = () => { window.focus(); notif.close(); };
-                }
+                // Jika notifikasi diklik, fokuskan layar ke aplikasi
+                notif.onclick = () => {
+                    window.focus();
+                    notif.close();
+                };
             }
         }
-
         function showToast(msg) {
             const t = document.createElement('div');
             t.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 font-medium text-sm';
@@ -679,11 +756,9 @@
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
-
-        // Register SW Admin
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('admin-sw.js').catch(err => console.log('SW Admin gagal:', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
             });
         }
     </script>
