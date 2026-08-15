@@ -122,7 +122,7 @@
         
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-bold">Riwayat Pesanan</h1>
+                <h1 class="text-2xl font-bold">Dashboard Ranel</h1>
                 <p class="text-sm text-gray-500">Kelola transaksi pelanggan Ranel Cell</p>
             </div>
             <button onclick="adminLogout()" class="btn-outline text-sm">
@@ -625,69 +625,77 @@
             }
         }
 
-        // --- FUNGSI AMBIL DATA PENGGUNA ---
-        async function loadUsers() {
+                // --- FUNGSI AMBIL DATA PENGGUNA (REAL-TIME) ---
+        function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
             
             showLoading();
             try {
-                const { db, collection, getDocs } = window.firebaseAdmin;
-                const querySnapshot = await getDocs(collection(db, "users"));
+                const { db, collection, query, onSnapshot } = window.firebaseAdmin;
+                const q = query(collection(db, "users"));
                 
-                if (querySnapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data pengguna.</td></tr>`;
-                    hideLoading();
-                    return;
-                }
+                // Gunakan onSnapshot agar data pengguna real-time
+                onSnapshot(q, (snapshot) => {
+                    let usersData = [];
+                    snapshot.forEach((doc) => {
+                        usersData.push(doc.data());
+                    });
 
-                let usersData = [];
-                querySnapshot.forEach((doc) => {
-                    usersData.push(doc.data());
-                });
+                    // Urutkan berdasarkan waktu terakhir online (LastSeen terbaru di atas)
+                    usersData.sort((a, b) => {
+                        let timeA = a.LastSeen || '';
+                        let timeB = b.LastSeen || '';
+                        return timeB.localeCompare(timeA);
+                    });
 
-                // Urutkan berdasarkan waktu terakhir online (LastSeen terbaru di atas)
-                usersData.sort((a, b) => {
-                    let timeA = a.LastSeen || '';
-                    let timeB = b.LastSeen || '';
-                    return timeB.localeCompare(timeA);
-                });
+                    if (usersData.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data pengguna.</td></tr>`;
+                        hideLoading();
+                        return;
+                    }
 
-                tbody.innerHTML = usersData.map(d => {
-                    // Format waktu pembuatan akun
-                    let createdDate = '-';
-                    if (d.createdAt) {
-                        try {
-                            createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        } catch(e) {
-                            createdDate = d.createdAt;
+                    tbody.innerHTML = usersData.map(d => {
+                        // Format waktu pembuatan akun
+                        let createdDate = '-';
+                        if (d.createdAt) {
+                            try {
+                                createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            } catch(e) {
+                                createdDate = d.createdAt;
+                            }
                         }
-                    }
 
-                    // Tentukan Provider
-                    let provider = '-';
-                    if (d.provider) {
-                        provider = d.provider.includes('google') ? 'Google' : 'Email/Password';
-                    } else if (d.email) {
-                        // Fallback jika field provider belum ada di database lama
-                        provider = d.email.endsWith('@gmail.com') ? 'Google (Dugaan)' : 'Email/Password';
-                    }
+                        // Tentukan Provider
+                        let provider = '-';
+                        if (d.provider) {
+                            provider = d.provider.includes('google') ? 'Google' : 'Email/Password';
+                        } else if (d.email) {
+                            provider = d.email.endsWith('@gmail.com') ? 'Google (Dugaan)' : 'Email/Password';
+                        }
 
-                    return `
-                        <tr>
-                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
-                            <td class="text-xs"><span class="badge badge-blue">${provider}</span></td>
-                            <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
-                            <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
-                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
-                        </tr>
-                    `;
-                }).join('');
+                        return `
+                            <tr>
+                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
+                                <td class="text-xs"><span class="badge badge-blue">${provider}</span></td>
+                                <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
+                                <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
+                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    // Sembunyikan loading setelah data pertama kali selesai dimuat
+                    hideLoading();
+
+                }, (error) => {
+                    console.error("Error fetching users: ", error);
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules.</td></tr>`;
+                    hideLoading();
+                });
 
             } catch (err) {
-                console.error("Error fetching users: ", err);
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules.</td></tr>`;
-            } finally {
+                console.error("Error setup users listener: ", err);
                 hideLoading();
             }
         }
