@@ -17,6 +17,9 @@
         import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
         import { getFirestore, collection, query, onSnapshot, doc, updateDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+        import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
+        importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+        importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js');
 
         const firebaseConfig = {
             apiKey: "AIzaSyDmDyI5olQ2a0zaxLIASH3EglRfsAmE7-Q",
@@ -28,18 +31,47 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const messaging = firebase.messaging(app);
         const appCheck = initializeAppCheck(app, {
             provider: new ReCaptchaV3Provider('6Le6GHotAAAAANiAaJBAx3UoO3DY8EfPVush6jAs'),
             isTokenAutoRefreshEnabled: true
         });
+        // Tangani notifikasi saat aplikasi di latar belakang / ditutup
+    messaging.onBackgroundMessage((payload) => {
+    console.log('Notifikasi diterima di background: ', payload);
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: 'Logo_WH_intuls-removebg-preview.png',
+        badge: 'Logo_WH_intuls-removebg-preview.png',
+        data: payload.data
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+    // Tangani klik notifikasi
+    self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const urlToOpen = event.notification.data.url || './index.html';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if (client.url.includes('index.html') && 'focus' in client) {
+                    client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: event.notification.data.orderId });
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) return clients.openWindow(urlToOpen);
+        })
+    );
+});
 
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.firebaseAdmin = {
-            auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs,
-            signInWithEmailAndPassword, signOut, onAuthStateChanged
-        };
+        window.firebaseAdmin = { auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs, signInWithEmailAndPassword, signOut, onAuthStateChanged, getMessaging, getToken };
         window.dispatchEvent(new Event('firebase-admin-ready'));
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -674,6 +706,27 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
             });
+        }
+                // --- FCM SETUP ---
+        async function setupFCM() {
+            const { getMessaging, getToken } = window.firebaseAdmin;
+            const messaging = getMessaging(app);
+            
+            try {
+                const currentToken = await getToken(messaging, { 
+                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0' 
+                });
+                if (currentToken) {
+                    console.log('FCM Token:', currentToken);
+                    // Simpan token ke Firestore
+                    const { db, doc, setDoc } = window.firebaseAdmin;
+                    await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
+                } else {
+                    console.log('Tidak ada token FCM');
+                }
+            } catch (err) {
+                console.error('Gagal ambil FCM token:', err);
+            }
         }
     </script>
 </body>
