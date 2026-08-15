@@ -367,11 +367,14 @@
             showLoading();
             
             window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
-                .then(() => {
+                                .then(() => {
                     errorEl.classList.add('hidden');
                     // HAPUS KOLOM EMAIL & PASSWORD begitu login berhasil
                     document.getElementById('admin-email').value = '';
                     document.getElementById('admin-pass').value = '';
+                    
+                    // MINTA IZIN NOTIFIKASI setelah login berhasil
+                    requestNotificationPermission();
                 })
                 .catch(err => {
                     // Sembunyikan loading jika gagal login
@@ -395,22 +398,38 @@
             
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
+                // Variabel untuk mengecek apakah ini load pertama kali
+        let isInitialLoadOrders = true;
+
         function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
             
-            // Tampilkan loading saat pertama kali memuat data
             if (allOrders.length === 0) showLoading();
 
             const q = query(collection(db, "Riwayat_Pesanan"));
             
             onSnapshot(q, (snapshot) => {
+                let newOrdersCount = 0;
+                let latestNewOrder = null;
+
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        newOrdersCount++;
+                        latestNewOrder = change.doc.data();
+                    }
+                });
+
+                // Jika BUKAN load pertama kali DAN ada pesanan baru masuk
+                if (!isInitialLoadOrders && newOrdersCount > 0 && latestNewOrder) {
+                    showOrderNotification(latestNewOrder);
+                }
+
                 allOrders = [];
                 snapshot.forEach((doc) => {
                     allOrders.push({ id: doc.id, data: doc.data() });
                 });
 
-                // Sortir manual berdasarkan tanggal karena format tanggal string
                 allOrders.sort((a, b) => {
                     let dateA = a.data.transactionDate || '';
                     let dateB = b.data.transactionDate || '';
@@ -418,9 +437,11 @@
                 });
 
                 renderTable(allOrders);
-                
-                // Sembunyikan animasi loading begitu data selesai dirender
                 hideLoading();
+
+                // Setelah load pertama kali selesai, ubah flag menjadi false
+                isInitialLoadOrders = false;
+
             }, (error) => {
                 console.error("Error fetching orders: ", error);
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data. Cek Security Rules Anda.</td></tr>`;
@@ -691,6 +712,41 @@
             } catch (err) {
                 console.error("Error setup users listener: ", err);
                 hideLoading();
+            }
+        }
+        // --- FUNGSI NOTIFIKASI PESANAN BARU ---
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Browser tidak mendukung notifikasi');
+                return;
+            }
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showToast('Notifikasi pesanan baru diaktifkan!');
+                    }
+                });
+            }
+        }
+
+        function showOrderNotification(orderData) {
+            if (Notification.permission === 'granted') {
+                const total = orderData.total ? `Rp ${orderData.total.toLocaleString('id-ID')}` : 'Rp 0';
+                let itemsText = orderData.items ? orderData.items.map(item => `${item.name}`).join(', ') : '-';
+                if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
+
+                const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', {
+                    body: `${orderData.userName || 'Pelanggan'} - ${itemsText}\nTotal: ${total}`,
+                    icon: './Gambar/Logo_BL_intuls_NoBCKG.png',
+                    badge: './Gambar/Logo_BL_intuls_NoBCKG.png',
+                    tag: 'new-order-' + Date.now()
+                });
+
+                // Jika notifikasi diklik, fokuskan layar ke aplikasi
+                notif.onclick = () => {
+                    window.focus();
+                    notif.close();
+                };
             }
         }
         function showToast(msg) {
