@@ -1,5 +1,5 @@
 {
-  "name": "ranel-backend",
+  "name": "adminranel",
   "version": "1.0.0",
   "main": "api/send-notif.js",
   "dependencies": {
