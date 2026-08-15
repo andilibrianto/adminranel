@@ -336,17 +336,22 @@
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
             
+            // Tampilkan loading saat tombol login diklik
             showLoading();
             
             window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
                 .then(() => {
                     errorEl.classList.add('hidden');
+                    // HAPUS KOLOM EMAIL & PASSWORD begitu login berhasil
+                    document.getElementById('admin-email').value = '';
+                    document.getElementById('admin-pass').value = '';
                 })
                 .catch(err => {
+                    // Sembunyikan loading jika gagal login
                     hideLoading();
                     
-                    let msg = "Error";
-                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar";
+                    let msg = "Terjadi error. Cek console (F12).";
+                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar di Firebase Auth.";
                     else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
                     else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
                     else if (err.code === 'auth/network-request-failed') msg = "Jaringan internet bermasalah.";
@@ -357,6 +362,10 @@
                 });
         }
         function adminLogout() {
+            // HAPUS KOLOM EMAIL & PASSWORD saat logout (jaga-jaga jika ada sisa teks)
+            document.getElementById('admin-email').value = '';
+            document.getElementById('admin-pass').value = '';
+            
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
         function loadOrders() {
@@ -483,8 +492,8 @@
                             </div>
                             ${idPels !== '' ? `
                             <div class="mt-2 pt-2 border-t border-[#222]">
-                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan koma jika lebih dari 1)</label>
-                                <input type="text" class="form-input modal-item-idpel" data-idx="${idx}" value="${idPels}">
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/baris baru jika lebih dari 1)</label>
+                                <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="3" style="resize: vertical;">${idPels}</textarea>
                             </div>
                             ` : ''}
                         </div>
@@ -521,9 +530,9 @@
                         quantity: parseInt(qtyInput.value) || 1
                     });
 
-                    // Jika ada ID Pelanggan, masukkan ke Object
+                    // Jika ada ID Pelanggan, masukkan ke Object (Pisahkan berdasarkan baris baru/Enter)
                     if (idpelInput) {
-                        const ids = idpelInput.value.split(',').map(id => id.trim()).filter(id => id !== '');
+                        const ids = idpelInput.value.split('\n').map(id => id.trim()).filter(id => id !== '');
                         if (ids.length > 0) {
                             updatedIdPelanggan[idx] = ids;
                         }
