@@ -71,11 +71,26 @@
         .badge-red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
         .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
         .badge-orange { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- Login View -->
+    <div id="loading-overlay" class="hidden fixed inset-0 z-[9995] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="flex flex-col items-center gap-3">
+            <div class="text-2xl font-extrabold text-pk tracking-[0.2em]">LOADING<span class="loading-dots"></span></div>
+        </div>
+    </div>
+
     <div id="login-view" class="w-full max-w-sm">
         <div class="card p-8">
             <div class="text-center mb-8">
@@ -103,7 +118,6 @@
         </div>
     </div>
 
-    <!-- Dashboard View -->
     <div id="dashboard-view" class="hidden w-full max-w-6xl my-8">
         
         <header class="flex justify-between items-center mb-8">
@@ -165,7 +179,6 @@
         </div>
     </div>
 
-        <!-- Modal Edit Data Transaksi -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
