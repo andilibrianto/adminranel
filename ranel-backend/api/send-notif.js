@@ -4,7 +4,6 @@ const admin = require('firebase-admin');
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
-            // Ini akan diambil dari Environment Variables Vercel
             projectId: process.env.FIREBASE_PROJECT_ID,
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
             privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
@@ -14,7 +13,22 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// Fungsi bantu untuk mengirim Header CORS
+function setCorsHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
 export default async function handler(req, res) {
+    // Set header CORS untuk semua respons
+    setCorsHeaders(res);
+
+    // Tangani preflight request dari browser (Wajib untuk POST request)
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -57,7 +71,6 @@ export default async function handler(req, res) {
                     failedTokens.push(tokens[idx]);
                 }
             });
-            // Hapus token error dari Firestore
             const batch = db.batch();
             const validTokensSnapshot = await db.collection('admin_tokens').get();
             validTokensSnapshot.forEach(doc => {
