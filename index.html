@@ -102,7 +102,7 @@
             </div>
             <div class="mb-4">
                 <label class="text-xs text-gray-500 mb-1 block">Admin Email</label>
-                <input type="email" id="admin-email" class="form-input" placeholder="admin@email.com">
+                <input type="email" id="admin-email" class="form-input" placeholder="admin@gmail.com">
             </div>
             <div class="mb-6">
                 <label class="text-xs text-gray-500 mb-1 block">Password</label>
@@ -262,13 +262,8 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="text-xs text-gray-500 mb-1 block">Daftar Barang</label>
-                    <textarea id="modal-items" class="form-input font-mono text-xs" rows="4" placeholder='[{"name":"Barang A","price":10000,"quantity":2}]'></textarea>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="text-xs text-gray-500 mb-1 block">ID Pelanggan</label>
-                    <textarea id="modal-idPelanggan" class="form-input font-mono text-xs" rows="3" placeholder='{"0":["12345678"]}'>'></textarea>
+                    <label class="text-xs text-gray-500 mb-1 block">Daftar Barang & ID Pelanggan</label>
+                    <div id="modal-items-container" class="space-y-3"></div>
                 </div>
             </div>
 
@@ -350,8 +345,8 @@
                 .catch(err => {
                     hideLoading();
                     
-                    let msg = "Terjadi error. Cek console (F12).";
-                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar di Firebase Auth.";
+                    let msg = "Error";
+                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar";
                     else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
                     else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
                     else if (err.code === 'auth/network-request-failed') msg = "Jaringan internet bermasalah.";
@@ -439,13 +434,10 @@
 
             renderTable(filtered);
         }
-        function openEditModal(docId) {
+                function openEditModal(docId) {
             currentDocId = docId;
             const orderObj = allOrders.find(o => o.id === docId);
-            if (!orderObj) {
-                alert("Data transaksi tidak ditemukan di memori!");
-                return;
-            }
+            if (!orderObj) return;
             
             const d = orderObj.data;
             
@@ -462,18 +454,83 @@
             document.getElementById('modal-shippingMode').value = d.shippingMode || '';
             document.getElementById('modal-address').value = d.address || '';
             document.getElementById('modal-promoCode').value = d.promoCode || '';
-            document.getElementById('modal-items').value = JSON.stringify(d.items || [], null, 2);
-            document.getElementById('modal-idPelanggan').value = JSON.stringify(d.idPelanggan || {}, null, 2);
+            
+            // Buat Form Dinamis untuk Daftar Barang
+            const itemsContainer = document.getElementById('modal-items-container');
+            itemsContainer.innerHTML = ''; // Kosongkan dulu
+            
+            if (d.items && d.items.length > 0) {
+                d.items.forEach((item, idx) => {
+                    // Cek apakah ada ID Pelanggan untuk barang ini
+                    const idPels = (d.idPelanggan && d.idPelanggan[idx]) ? d.idPelanggan[idx].join(', ') : '';
+                    
+                    itemsContainer.innerHTML += `
+                        <div class="p-3 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
+                            <div class="mb-2 text-[11px] text-gray-500">Barang ${idx + 1}</div>
+                            <div class="mb-2">
+                                <label class="text-[10px] text-gray-500 mb-1 block">Nama Barang</label>
+                                <input type="text" class="form-input modal-item-name" data-idx="${idx}" value="${(item.name || '').replace(/"/g, '&quot;')}">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 mb-1 block">Harga</label>
+                                    <input type="number" class="form-input modal-item-price" data-idx="${idx}" value="${item.price || 0}">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 mb-1 block">Qty</label>
+                                    <input type="number" class="form-input modal-item-qty" data-idx="${idx}" value="${item.quantity || 1}">
+                                </div>
+                            </div>
+                            ${idPels !== '' ? `
+                            <div class="mt-2 pt-2 border-t border-[#222]">
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan koma jika lebih dari 1)</label>
+                                <input type="text" class="form-input modal-item-idpel" data-idx="${idx}" value="${idPels}">
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Tidak ada barang.</p>';
+            }
+            
             document.getElementById('edit-modal').classList.remove('hidden');
         }
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
             currentDocId = null;
         }
-        async function saveDataChange() {
+                async function saveDataChange() {
             if (!currentDocId) return;
             
             try {
+                // 1. Kumpulkan Data Barang & ID Pelanggan dari Form Dinamis
+                let updatedItems = [];
+                let updatedIdPelanggan = {};
+                
+                document.querySelectorAll('.modal-item-name').forEach((nameInput) => {
+                    const idx = nameInput.dataset.idx;
+                    const priceInput = document.querySelector(`.modal-item-price[data-idx="${idx}"]`);
+                    const qtyInput = document.querySelector(`.modal-item-qty[data-idx="${idx}"]`);
+                    const idpelInput = document.querySelector(`.modal-item-idpel[data-idx="${idx}"]`);
+                    
+                    // Masukkan ke Array Barang
+                    updatedItems.push({
+                        name: nameInput.value,
+                        price: parseInt(priceInput.value) || 0,
+                        quantity: parseInt(qtyInput.value) || 1
+                    });
+
+                    // Jika ada ID Pelanggan, masukkan ke Object
+                    if (idpelInput) {
+                        const ids = idpelInput.value.split(',').map(id => id.trim()).filter(id => id !== '');
+                        if (ids.length > 0) {
+                            updatedIdPelanggan[idx] = ids;
+                        }
+                    }
+                });
+
+                // 2. Ambil semua nilai dari form utama
                 const updatedData = {
                     userName: document.getElementById('modal-userName').value,
                     userTelp: document.getElementById('modal-userTelp').value,
@@ -487,8 +544,8 @@
                     shippingMode: document.getElementById('modal-shippingMode').value,
                     address: document.getElementById('modal-address').value,
                     promoCode: document.getElementById('modal-promoCode').value,
-                    items: JSON.parse(document.getElementById('modal-items').value),
-                    idPelanggan: JSON.parse(document.getElementById('modal-idPelanggan').value)
+                    items: updatedItems,
+                    idPelanggan: updatedIdPelanggan
                 };
 
                 const { db, doc, updateDoc } = window.firebaseAdmin;
@@ -500,7 +557,7 @@
                 closeEditModal();
             } catch (err) {
                 console.error("Error updating data: ", err);
-                alert("Gagal menyimpan. Pastikan format JSON pada kolom 'Daftar Barang' dan 'ID Pelanggan' ditulis dengan benar (gunakan tanda kurung [] dan {}).");
+                alert("Gagal menyimpan data. Mohon cek kembali isian form.");
             }
         }
 
