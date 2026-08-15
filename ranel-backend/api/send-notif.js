@@ -20,7 +20,7 @@ function setCorsHeaders(res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
     // Set header CORS untuk semua respons
     setCorsHeaders(res);
 
@@ -60,10 +60,10 @@ export default async function handler(req, res) {
             tokens: tokens
         };
 
-        // 3. Kirim push notification ke semua token Admin
+        // 3. Kirim push notification
         const response = await admin.messaging().sendMulticast(message);
         
-        // Hapus token yang sudah tidak valid (misal admin uninstall aplikasinya)
+        // Hapus token yang tidak valid
         if (response.failureCount > 0) {
             const failedTokens = [];
             response.responses.forEach((resp, idx) => {
@@ -87,4 +87,4 @@ export default async function handler(req, res) {
         console.error("Error sending notification:", error);
         return res.status(500).json({ error: error.message });
     }
-}
+};
