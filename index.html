@@ -204,28 +204,6 @@
             </div>
         </div>
 
-        <div class="card overflow-x-auto">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Waktu</th>
-                        <th>ID Transaksi</th>
-                        <th>Nama Pelanggan</th>
-                        <th>Detail</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-table-body">
-                    <tr>
-                        <td colspan="7" class="text-center text-gray-500 py-8">Memuat data transaksi...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -415,7 +393,7 @@
             
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
-                function loadOrders() {
+        function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
             
