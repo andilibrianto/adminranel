@@ -15,7 +15,7 @@ const app = firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging(app);
 
 // Tangani notifikasi saat aplikasi di latar belakang / ditutup
-messaging.onBackgroundMessage((payload) => {
+    messaging.onBackgroundMessage((payload) => {
     console.log('Notifikasi diterima di background: ', payload);
     const notificationTitle = payload.notification.title;
     const notificationOptions = {

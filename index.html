@@ -335,7 +335,7 @@
             }
         }
 
-        function adminLogin() {
+                function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
@@ -345,7 +345,8 @@
                     errorEl.classList.add('hidden');
                     document.getElementById('admin-email').value = '';
                     document.getElementById('admin-pass').value = '';
-                    requestNotificationPermission();
+                    requestNotificationPermission(); // Minta izin
+                    setupFCM(); // <-- TAMBAHKAN INI agar token tersimpan ke Firestore
                 })
                 .catch(err => {
                     hideLoading();
@@ -362,7 +363,6 @@
             document.getElementById('admin-pass').value = '';
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
-
         let isInitialLoadOrders = true;
         function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
@@ -678,7 +678,7 @@
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
             });
         }
-                // --- FCM SETUP ---
+        // --- FCM SETUP ---
         async function setupFCM() {
             const { getMessaging, getToken } = window.firebaseAdmin;
             const messaging = getMessaging(app);
