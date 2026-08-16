@@ -334,7 +334,20 @@
                 icon.classList.add('fa-eye');
             }
         }
-
+// --- FCM SETUP ---
+        async function setupFCM() {
+            const { messaging, getToken, db, doc, setDoc } = window.firebaseAdmin;
+            try {
+                const currentToken = await getToken(messaging, { 
+                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0' 
+                });
+                if (currentToken) {
+                    await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
+                }
+            } catch (err) {
+                console.error('Gagal ambil FCM token:', err);
+            }
+        }
         function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
@@ -679,20 +692,7 @@
             }
         });
 
-        // --- FCM SETUP ---
-        async function setupFCM() {
-            const { messaging, getToken, db, doc, setDoc } = window.firebaseAdmin;
-            try {
-                const currentToken = await getToken(messaging, { 
-                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0' 
-                });
-                if (currentToken) {
-                    await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
-                }
-            } catch (err) {
-                console.error('Gagal ambil FCM token:', err);
-            }
-        }
+        
     </script>
 </body>
 </html>
