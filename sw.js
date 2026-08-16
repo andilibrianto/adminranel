@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ranel-admin-0.0.0.3.4';
+const CACHE_NAME = 'ranel-admin-0.0.0.3.5';
 const urlsToCache = [
     './index.html',
     './manifest.json',
@@ -20,4 +20,28 @@ self.addEventListener('fetch', event => {
         return;
     }
     event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
+});
+// Tangkap event saat notifikasi diklik
+self.addEventListener('notificationclick', event => {
+    event.notification.close(); // Tutup notifikasinya
+
+    const orderId = event.notification.data.orderId;
+    const urlToOpen = event.notification.data.url || './index.html';
+
+    // Buka aplikasi Admin dan fokus ke layar
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if (client.url.includes('index.html') && 'focus' in client) {
+                    // Jika aplikasi sedang terbuka, kirim pesan agar langsung buka modal
+                    client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: orderId });
+                    return client.focus();
+                }
+            }
+            // Jika aplikasi tertutup, buka tab baru dengan URL berparameter
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
+    );
 });
