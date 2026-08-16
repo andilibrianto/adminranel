@@ -295,7 +295,7 @@
             if (el) el.classList.add('hidden');
         }
 
-                window.addEventListener('firebase-admin-ready', function() {
+            window.addEventListener('firebase-admin-ready', function() {
             const { auth, onAuthStateChanged } = window.firebaseAdmin;
             showLoading();
             onAuthStateChanged(auth, (user) => {
@@ -303,17 +303,15 @@
                 if (user) {
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('dashboard-view').classList.remove('hidden');
-                    loadOrders();
                     
                     // CEK URL PARAMETER (Jika notifikasi diklik saat aplikasi tertutup)
                     const urlParams = new URLSearchParams(window.location.search);
                     const orderIdFromUrl = urlParams.get('orderId');
                     if (orderIdFromUrl) {
-                        // Tunggu 1.5 detik agar tabel selesai dimuat, lalu buka modal
-                        setTimeout(() => {
-                            openEditModal(orderIdFromUrl);
-                        }, 1500);
+                        pendingOrderId = orderIdFromUrl; // Simpan ID, tunggu data selesai dimuat
                     }
+                    
+                    loadOrders();
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('dashboard-view').classList.add('hidden');
@@ -363,6 +361,7 @@
             document.getElementById('admin-pass').value = '';
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
+        let pendingOrderId = null;
         let isInitialLoadOrders = true;
         function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
@@ -390,15 +389,18 @@
                     let dateB = b.data.transactionDate || '';
                     return dateB.localeCompare(dateA);
                 });
-                renderTable(allOrders);
+                                renderTable(allOrders);
                 hideLoading();
                 isInitialLoadOrders = false;
-            }, (error) => {
-                console.error("Error fetching orders: ", error);
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
-                hideLoading();
-            });
-        }
+
+                // Jika ada pendingOrderId (dari URL atau SW), langsung buka modalnya
+                if (pendingOrderId) {
+                    const orderObj = allOrders.find(o => o.id === pendingOrderId);
+                    if (orderObj) {
+                        openEditModal(pendingOrderId);
+                        pendingOrderId = null; // Hapus setelah dibuka
+                    }
+            }
 
         function renderTable(orders) {
             const tbody = document.getElementById('orders-table-body');
@@ -661,15 +663,19 @@
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
-        // Tangkap pesan dari Service Worker (saat notifikasi diklik)
+        // Tangkap pesan dari Service Worker (saat notifikasi diklik saat aplikasi dibuka)
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'OPEN_ORDER_DETAIL') {
                 const orderId = event.data.orderId;
                 if (orderId) {
-                    // Pastikan tab Riwayat Pesanan sedang aktif
                     switchTab('orders');
-                    // Buka modal detail transaksinya
-                    openEditModal(orderId);
+                    // Cek apakah data sudah ada di tabel
+                    const orderObj = allOrders.find(o => o.id === orderId);
+                    if (orderObj) {
+                        openEditModal(orderId);
+                    } else {
+                        pendingOrderId = orderId; // Simpan dulu, nanti dicek saat loadOrders selesai
+                    }
                 }
             }
         });

@@ -11,46 +11,26 @@ const firebaseConfig = {
     appId: "1:267696476787:web:5fda181cfdaeec413e5006"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging(app);
+firebase.initializeApp(firebaseConfig);
+firebase.messaging();
 
-// Tangani notifikasi saat aplikasi di latar belakang / ditutup
-    messaging.onBackgroundMessage((payload) => {
-    console.log('Notifikasi diterima di background: ', payload);
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: 'Logo_WH_intuls-removebg-preview.png',
-        badge: 'Logo_WH_intuls-removebg-preview.png',
-        data: payload.data
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-// Tangani klik notifikasi
+// Tangani klik notifikasi (Wajib ada)
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-    const urlToOpen = event.notification.data.url || './index.html';
+    
+    const orderId = event.notification.data?.orderId;
+    const urlToOpen = event.notification.data?.url || './index.html';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
             for (const client of clientList) {
                 if (client.url.includes('index.html') && 'focus' in client) {
-                    client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: event.notification.data.orderId });
+                    // Kirim pesan ke aplikasi agar buka modal
+                    client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: orderId });
                     return client.focus();
                 }
             }
             if (clients.openWindow) return clients.openWindow(urlToOpen);
-        })
-    );
-});
-// Tangkap event push secara eksplisit agar PWABuilder mendeteksinya
-self.addEventListener('push', event => {
-    // Biarkan Firebase SDK yang menangani notifikasinya
-    event.waitUntil(
-        self.registration.showNotification('RANEL CELL', {
-            body: 'Memuat data pesanan...'
         })
     );
 });
