@@ -2,11 +2,23 @@ const admin = require('firebase-admin');
 
 // Inisialisasi Firebase Admin SDK
 if (!admin.apps.length) {
+    // Ambil Private Key dari Vercel
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    // Hapus tanda kutip ganda di awal dan akhir jika tidak sengaja terbawa
+    if (privateKey && privateKey.startsWith('"') && privateKey.endsWith('"')) {
+        privateKey = privateKey.slice(1, -1);
+    }
+    // Ganti tulisan \n literal menjadi baris baru (enter) yang asli
+    if (privateKey) {
+        privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
     admin.initializeApp({
         credential: admin.credential.cert({
             projectId: process.env.FIREBASE_PROJECT_ID,
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY
+            privateKey: privateKey
         })
     });
 }
