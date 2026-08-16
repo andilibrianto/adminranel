@@ -408,18 +408,18 @@
                     allOrders.push({ id: doc.id, data: doc.data() });
                 });
 
-                // Fungsi bantu untuk mengubah string tanggal menjadi angka (untuk perbandingan)
+                // Fungsi parser tanggal yang lebih akurat
                 function parseDate(dateStr) {
                     if (!dateStr) return 0;
-                    let [datePart, timePart] = dateStr.split(', ');
-                    if (!datePart || !timePart) return 0;
-                    let [day, month, year] = datePart.split('/').map(Number);
-                    let timeArr = timePart.split(/[.:]/).map(Number);
-                    let [hours, minutes, seconds] = timeArr;
-                    return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+                    let parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?/);
+                    if (parts) {
+                        return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0, parts[6] || 0).getTime();
+                    }
+                    let dateObj = new Date(dateStr);
+                    return isNaN(dateObj) ? 0 : dateObj.getTime();
                 }
 
-                // Urutkan berdasarkan tanggal transaksi dari TERBESAR (Terbaru) ke TERKECIL (Terlama)
+                // Urutkan berdasarkan tanggal transaksi: b - a (Terbaru ke Terlama)
                 allOrders.sort((a, b) => parseDate(b.data.transactionDate) - parseDate(a.data.transactionDate));
 
                 renderTable(allOrders);
@@ -620,18 +620,18 @@
                     let usersData = [];
                     snapshot.forEach((doc) => usersData.push(doc.data()));
 
-                    // Fungsi bantu untuk mengubah string tanggal menjadi angka
+                    // Fungsi parser tanggal yang lebih akurat
                     function parseDate(dateStr) {
                         if (!dateStr) return 0;
-                        let [datePart, timePart] = dateStr.split(', ');
-                        if (!datePart || !timePart) return 0;
-                        let [day, month, year] = datePart.split('/').map(Number);
-                        let timeArr = timePart.split(/[.:]/).map(Number);
-                        let [hours, minutes, seconds] = timeArr;
-                        return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+                        let parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?/);
+                        if (parts) {
+                            return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0, parts[6] || 0).getTime();
+                        }
+                        let dateObj = new Date(dateStr);
+                        return isNaN(dateObj) ? 0 : dateObj.getTime();
                     }
 
-                    // Urutkan berdasarkan LastSeen dari TERBESAR (Terbaru) ke TERKECIL (Terlama)
+                    // Urutkan berdasarkan LastSeen: b - a (Terbaru ke Terlama)
                     usersData.sort((a, b) => parseDate(b.LastSeen) - parseDate(a.LastSeen));
 
                     if (usersData.length === 0) {
