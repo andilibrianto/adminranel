@@ -72,8 +72,8 @@ module.exports = async (req, res) => {
             tokens: tokens
         };
 
-        // 3. Kirim push notification
-        const response = await admin.messaging().sendMulticast(message);
+        // 3. Kirim push notification ke semua token Admin
+        const response = await admin.messaging().sendEachForMulticast(message);
         
         // Hapus token yang tidak valid
         if (response.failureCount > 0) {
