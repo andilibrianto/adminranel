@@ -15,7 +15,7 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 // --- KODE PWA CACHE ---
-const CACHE_NAME = 'ranel-admin-0.0.0.3.6';
+const CACHE_NAME = 'ranel-admin-0.0.0.3.7';
 const urlsToCache = [
     './index.html',
     './manifest.json',
