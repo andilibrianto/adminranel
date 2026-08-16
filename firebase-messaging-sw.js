@@ -14,49 +14,27 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// --- KODE PWA CACHE ---
-const CACHE_NAME = 'ranel-admin-0.0.0.3.7';
-const urlsToCache = [
-    './index.html',
-    './manifest.json',
-    'https://cdn.tailwindcss.com',
-    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
-];
-
-self.addEventListener('install', event => { 
-    self.skipWaiting(); 
-    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+// Tangani notifikasi saat aplikasi di latar belakang
+messaging.onBackgroundMessage((payload) => {
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: 'Logo_WH_intuls-removebg-preview.png',
+        data: payload.data
+    };
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-self.addEventListener('activate', event => {
-    event.waitUntil(caches.keys().then(cacheNames => Promise.all(cacheNames.map(cacheName => {
-        if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
-    }))));
-    self.clients.claim();
-});
-
-self.addEventListener('fetch', event => {
-    if (event.request.method !== 'GET') return;
-    if (event.request.url.includes('index.html') || event.request.mode === 'navigate') {
-        event.respondWith(fetch(event.request));
-        return;
-    }
-    event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
-});
-
-// --- KODE TANGANI KLIK NOTIFIKASI ---
+// Tangani klik notifikasi
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-    
     const orderId = String(event.notification.data?.orderId || '');
     const urlToOpen = event.notification.data?.url || './index.html';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
             for (const client of clientList) {
-                if (client.url.includes('index.html') && 'focus' in client) {
-                    // Kirim pesan ke aplikasi agar langsung buka modal detail
+                if ('focus' in client) {
                     client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: orderId });
                     return client.focus();
                 }
