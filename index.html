@@ -679,12 +679,6 @@
             }
         });
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
-            });
-        }
-
         // --- FCM SETUP ---
         async function setupFCM() {
             const { messaging, getToken, db, doc, setDoc } = window.firebaseAdmin;

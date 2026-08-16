@@ -1,4 +1,4 @@
-// Import Firebase Compat (Wajib pakai -compat.js untuk Service Worker)
+// Import Firebase Compat
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -14,29 +14,53 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// Force Service Worker untuk langsung aktif
-self.addEventListener('install', event => { self.skipWaiting(); });
-self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+// --- KODE PWA CACHE ---
+const CACHE_NAME = 'ranel-admin-0.0.0.3.6';
+const urlsToCache = [
+    './index.html',
+    './manifest.json',
+    'https://cdn.tailwindcss.com',
+    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
+];
 
-// Tangani klik notifikasi
+self.addEventListener('install', event => { 
+    self.skipWaiting(); 
+    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(caches.keys().then(cacheNames => Promise.all(cacheNames.map(cacheName => {
+        if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
+    }))));
+    self.clients.claim();
+});
+
+self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') return;
+    if (event.request.url.includes('index.html') || event.request.mode === 'navigate') {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+    event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
+});
+
+// --- KODE TANGANI KLIK NOTIFIKASI ---
 self.addEventListener('notificationclick', event => {
     event.notification.close();
     
-    // Pastikan orderId selalu berupa String
     const orderId = String(event.notification.data?.orderId || '');
     const urlToOpen = event.notification.data?.url || './index.html';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
             for (const client of clientList) {
-                // Cek apakah ini adalah aplikasi admin kita
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                if (client.url.includes('index.html') && 'focus' in client) {
                     // Kirim pesan ke aplikasi agar langsung buka modal detail
                     client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: orderId });
                     return client.focus();
                 }
             }
-            // Jika aplikasi tertutup, buka tab baru dengan URL berparameter
             if (clients.openWindow) return clients.openWindow(urlToOpen);
         })
     );
