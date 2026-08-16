@@ -386,7 +386,7 @@
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
 
-        function loadOrders() {
+                function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
             if (allOrders.length === 0) showLoading();
@@ -407,21 +407,30 @@
                 snapshot.forEach((doc) => {
                     allOrders.push({ id: doc.id, data: doc.data() });
                 });
-                allOrders.sort((a, b) => {
-                    let dateA = a.data.transactionDate || '';
-                    let dateB = b.data.transactionDate || '';
-                    return dateB.localeCompare(dateA);
-                });
+
+                // Fungsi bantu untuk mengubah string tanggal menjadi angka (untuk perbandingan)
+                function parseDate(dateStr) {
+                    if (!dateStr) return 0;
+                    let [datePart, timePart] = dateStr.split(', ');
+                    if (!datePart || !timePart) return 0;
+                    let [day, month, year] = datePart.split('/').map(Number);
+                    let timeArr = timePart.split(/[.:]/).map(Number);
+                    let [hours, minutes, seconds] = timeArr;
+                    return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+                }
+
+                // Urutkan berdasarkan tanggal transaksi dari TERBESAR (Terbaru) ke TERKECIL (Terlama)
+                allOrders.sort((a, b) => parseDate(b.data.transactionDate) - parseDate(a.data.transactionDate));
+
                 renderTable(allOrders);
                 hideLoading();
                 isInitialLoadOrders = false;
 
-                // Jika ada pendingOrderId (dari URL atau SW), langsung buka modalnya
                 if (pendingOrderId) {
                     const orderObj = allOrders.find(o => o.id === pendingOrderId);
                     if (orderObj) {
                         openEditModal(pendingOrderId);
-                        pendingOrderId = null; // Hapus setelah dibuka
+                        pendingOrderId = null;
                     }
                 }
             }, (error) => {
@@ -600,7 +609,7 @@
             }
         }
 
-        function loadUsers() {
+                function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
             showLoading();
@@ -610,7 +619,21 @@
                 onSnapshot(q, (snapshot) => {
                     let usersData = [];
                     snapshot.forEach((doc) => usersData.push(doc.data()));
-                    usersData.sort((a, b) => (b.LastSeen || '').localeCompare(a.LastSeen || ''));
+
+                    // Fungsi bantu untuk mengubah string tanggal menjadi angka
+                    function parseDate(dateStr) {
+                        if (!dateStr) return 0;
+                        let [datePart, timePart] = dateStr.split(', ');
+                        if (!datePart || !timePart) return 0;
+                        let [day, month, year] = datePart.split('/').map(Number);
+                        let timeArr = timePart.split(/[.:]/).map(Number);
+                        let [hours, minutes, seconds] = timeArr;
+                        return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+                    }
+
+                    // Urutkan berdasarkan LastSeen dari TERBESAR (Terbaru) ke TERKECIL (Terlama)
+                    usersData.sort((a, b) => parseDate(b.LastSeen) - parseDate(a.LastSeen));
+
                     if (usersData.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`;
                         hideLoading(); return;
