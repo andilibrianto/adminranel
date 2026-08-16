@@ -45,3 +45,12 @@ self.addEventListener('notificationclick', event => {
         })
     );
 });
+// Tangkap event push secara eksplisit agar PWABuilder mendeteksinya
+self.addEventListener('push', event => {
+    // Biarkan Firebase SDK yang menangani notifikasinya
+    event.waitUntil(
+        self.registration.showNotification('RANEL CELL', {
+            body: 'Memuat data pesanan...'
+        })
+    );
+});
