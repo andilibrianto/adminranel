@@ -334,15 +334,24 @@
                 icon.classList.add('fa-eye');
             }
         }
-// --- FCM SETUP ---
+        // --- FCM SETUP ---
         async function setupFCM() {
             const { messaging, getToken, db, doc, setDoc } = window.firebaseAdmin;
             try {
+                const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+                await navigator.serviceWorker.ready;
+
                 const currentToken = await getToken(messaging, { 
-                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0' 
+                    // GANTI VAPID KEY DI BAWAH INI DENGAN MILIK ANDA
+                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0', 
+                    serviceWorkerRegistration: registration 
                 });
+                
                 if (currentToken) {
+                    console.log('FCM Token berhasil didapat:', currentToken);
                     await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
+                } else {
+                    console.log('Tidak ada token FCM');
                 }
             } catch (err) {
                 console.error('Gagal ambil FCM token:', err);
