@@ -12,13 +12,18 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-firebase.messaging();
+const messaging = firebase.messaging();
 
-// Tangani klik notifikasi (Wajib ada)
+// Force Service Worker untuk langsung aktif & ambil alih kendali
+self.addEventListener('install', event => { self.skipWaiting(); });
+self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+
+// Tangani klik notifikasi
 self.addEventListener('notificationclick', event => {
     event.notification.close();
     
-    const orderId = event.notification.data?.orderId;
+    // Pastikan orderId selalu berupa String
+    const orderId = String(event.notification.data?.orderId || '');
     const urlToOpen = event.notification.data?.url || './index.html';
 
     event.waitUntil(

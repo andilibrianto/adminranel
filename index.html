@@ -282,9 +282,11 @@
         </div>
     </div>
 
-    <script>
+        <script>
         let currentDocId = null;
         let allOrders = [];
+        let pendingOrderId = null;
+        let isInitialLoadOrders = true;
 
         function showLoading() {
             const el = document.getElementById('loading-overlay');
@@ -295,7 +297,7 @@
             if (el) el.classList.add('hidden');
         }
 
-            window.addEventListener('firebase-admin-ready', function() {
+        window.addEventListener('firebase-admin-ready', function() {
             const { auth, onAuthStateChanged } = window.firebaseAdmin;
             showLoading();
             onAuthStateChanged(auth, (user) => {
@@ -308,7 +310,7 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const orderIdFromUrl = urlParams.get('orderId');
                     if (orderIdFromUrl) {
-                        pendingOrderId = orderIdFromUrl; // Simpan ID, tunggu data selesai dimuat
+                        pendingOrderId = String(orderIdFromUrl); // Simpan ID sebagai String
                     }
                     
                     loadOrders();
@@ -333,7 +335,7 @@
             }
         }
 
-            function adminLogin() {
+        function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
@@ -343,8 +345,8 @@
                     errorEl.classList.add('hidden');
                     document.getElementById('admin-email').value = '';
                     document.getElementById('admin-pass').value = '';
-                    requestNotificationPermission(); // Minta izin
-                    setupFCM(); // <-- TAMBAHKAN INI agar token tersimpan ke Firestore
+                    requestNotificationPermission();
+                    setupFCM();
                 })
                 .catch(err => {
                     hideLoading();
@@ -361,8 +363,7 @@
             document.getElementById('admin-pass').value = '';
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
-        let pendingOrderId = null;
-        let isInitialLoadOrders = true;
+
         function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
@@ -389,7 +390,7 @@
                     let dateB = b.data.transactionDate || '';
                     return dateB.localeCompare(dateA);
                 });
-                                renderTable(allOrders);
+                renderTable(allOrders);
                 hideLoading();
                 isInitialLoadOrders = false;
 
@@ -401,6 +402,10 @@
                         pendingOrderId = null; // Hapus setelah dibuka
                     }
                 }
+            }, (error) => {
+                console.error("Error fetching orders: ", error);
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
+                hideLoading();
             });
         }
 
@@ -620,29 +625,23 @@
                 });
             }
         }
-                function showOrderNotification(orderData) {
+        function showOrderNotification(orderData) {
             if (!('Notification' in window)) return;
-            
             if (Notification.permission === 'granted') {
-                // Ambil ID Transaksi dari orderData (pastikan fieldnya sesuai dengan database Anda)
-                const orderId = orderData.orderId || orderData.id || ''; 
-                
+                const orderId = String(orderData.orderId || orderData.id || ''); 
                 const total = orderData.total ? `Rp ${orderData.total.toLocaleString('id-ID')}` : 'Rp 0';
                 let itemsText = orderData.items ? orderData.items.map(item => `${item.name}`).join(', ') : '-';
                 if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
-                
                 const options = {
                     body: `${orderData.userName || 'Pelanggan'} - ${itemsText}\nTotal: ${total}`,
                     icon: 'Logo_WH_intuls-removebg-preview.png',
                     badge: 'Logo_WH_intuls-removebg-preview.png',
                     tag: 'new-order-' + Date.now(),
-                    // Sisipkan orderId di sini agar bisa dibaca oleh Service Worker
                     data: {
                         orderId: orderId,
                         url: './index.html?orderId=' + orderId
                     }
                 };
-
                 try {
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.ready.then(registration => {
@@ -652,9 +651,7 @@
                         const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', options);
                         notif.onclick = () => { window.focus(); notif.close(); };
                     }
-                } catch (e) {
-                    console.error("Gagal membuat notifikasi:", e);
-                }
+                } catch (e) { console.error("Gagal membuat notifikasi:", e); }
             }
         }
 
@@ -665,41 +662,38 @@
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
+
         // Tangkap pesan dari Service Worker (saat notifikasi diklik saat aplikasi dibuka)
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'OPEN_ORDER_DETAIL') {
-                const orderId = event.data.orderId;
+                const orderId = String(event.data.orderId || '');
                 if (orderId) {
                     switchTab('orders');
-                    // Cek apakah data sudah ada di tabel
                     const orderObj = allOrders.find(o => o.id === orderId);
                     if (orderObj) {
                         openEditModal(orderId);
                     } else {
-                        pendingOrderId = orderId; // Simpan dulu, nanti dicek saat loadOrders selesai
+                        pendingOrderId = orderId; 
                     }
                 }
             }
         });
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Admin gagal:', err));
             });
         }
+
         // --- FCM SETUP ---
         async function setupFCM() {
             const { messaging, getToken, db, doc, setDoc } = window.firebaseAdmin;
-            
             try {
                 const currentToken = await getToken(messaging, { 
                     vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0' 
                 });
                 if (currentToken) {
-                    console.log('FCM Token:', currentToken);
-                    // Simpan token ke Firestore
                     await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
-                } else {
-                    console.log('Tidak ada token FCM');
                 }
             } catch (err) {
                 console.error('Gagal ambil FCM token:', err);
