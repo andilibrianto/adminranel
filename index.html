@@ -401,10 +401,7 @@
                     }
                 });
                 if (!isInitialLoadOrders && newOrdersCount > 0 && latestNewOrder) {
-                    // Hanya tampilkan notifikasi lokal jika aplikasi Admin sedang dibuka (tidak di-minimize/force close)
-                    if (!document.hidden) {
-                        showOrderNotification(latestNewOrder);
-                    }
+                    showOrderNotification(latestNewOrder);
                 }
                 allOrders = [];
                 snapshot.forEach((doc) => {

@@ -12,7 +12,18 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-firebase.messaging();
+const messaging = firebase.messaging();
+
+// Tangani notifikasi saat aplikasi di latar belakang
+messaging.onBackgroundMessage((payload) => {
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: 'Logo_WH_intuls-removebg-preview.png',
+        data: payload.data
+    };
+    self.registration.showNotification(notificationTitle, notificationOptions);
+});
 
 // Tangani klik notifikasi
 self.addEventListener('notificationclick', event => {
@@ -23,7 +34,7 @@ self.addEventListener('notificationclick', event => {
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
             for (const client of clientList) {
-                if (client.url.includes('index.html') && 'focus' in client) {
+                if ('focus' in client) {
                     client.postMessage({ type: 'OPEN_ORDER_DETAIL', orderId: orderId });
                     return client.focus();
                 }
