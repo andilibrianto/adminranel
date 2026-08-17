@@ -12,20 +12,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
-
-// Tangani notifikasi saat aplikasi di latar belakang / ditutup
-messaging.onBackgroundMessage((payload) => {
-    const notificationTitle = payload.data.title || '🔔 Pesanan Baru RANEL CELL!';
-    const notificationOptions = {
-        body: payload.data.body || '',
-        icon: 'Logo_WH_intuls-removebg-preview.png',
-        badge: 'Logo_WH_intuls-removebg-preview.png',
-        data: payload.data
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
-});
+firebase.messaging();
 
 // Tangani klik notifikasi
 self.addEventListener('notificationclick', event => {
