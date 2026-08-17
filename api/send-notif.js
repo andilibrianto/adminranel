@@ -61,11 +61,10 @@ module.exports = async (req, res) => {
         if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
 
         const message = {
-            notification: {
-                title: '🔔 Pesanan Baru RANEL CELL!',
-                body: `${userName || 'Pelanggan'} - ${itemsText}\nTotal: Rp ${total.toLocaleString('id-ID')}`
-            },
+            // Kita pindah isinya ke 'data' agar tidak dobel dengan Chrome
             data: {
+                title: '🔔 Pesanan Baru RANEL CELL!',
+                body: `${userName || 'Pelanggan'} - ${itemsText}\nTotal: Rp ${total.toLocaleString('id-ID')}`,
                 orderId: orderId,
                 url: './index.html?orderId=' + orderId
             },
