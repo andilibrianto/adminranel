@@ -17,7 +17,7 @@
         import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
         import { getFirestore, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-        import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDmDyI5olQ2a0zaxLIASH3EglRfsAmE7-Q",
@@ -39,10 +39,10 @@
         const messaging = getMessaging(app); // Tambahkan ini
 
         window.firebaseAdmin = {
-            auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc,
-            signInWithEmailAndPassword, signOut, onAuthStateChanged,
-            messaging, getMessaging, getToken
-        };
+    auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc,
+    signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    messaging, getMessaging, getToken, onMessage
+};
         window.dispatchEvent(new Event('firebase-admin-ready'));
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -334,25 +334,39 @@
                 icon.classList.add('fa-eye');
             }
         }
-        // --- FCM SETUP ---
+                // --- FCM SETUP ---
         async function setupFCM() {
-            const { messaging, getToken, db, doc, setDoc } = window.firebaseAdmin;
+            const { messaging, getToken, db, doc, setDoc, onMessage } = window.firebaseAdmin;
             try {
                 const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
                 await navigator.serviceWorker.ready;
 
                 const currentToken = await getToken(messaging, { 
-                    // GANTI VAPID KEY DI BAWAH INI DENGAN MILIK ANDA
-                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0', 
+                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0',
                     serviceWorkerRegistration: registration 
                 });
                 
                 if (currentToken) {
-                    console.log('FCM Token berhasil didapat:', currentToken);
                     await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
-                } else {
-                    console.log('Tidak ada token FCM');
                 }
+
+                // Tangkap pesan saat aplikasi Admin sedang dibuka (Foreground)
+                onMessage(messaging, (payload) => {
+                    console.log('Pesan diterima di foreground:', payload);
+                    const orderId = payload.data?.orderId || '';
+                    const total = payload.data?.total ? parseInt(payload.data.total) : 0;
+                    const userName = payload.data?.userName || 'Pelanggan';
+                    let items = [];
+                    try { items = JSON.parse(payload.data?.items || '[]'); } catch(e) {}
+                    
+                    showOrderNotification({
+                        orderId: orderId,
+                        total: total,
+                        userName: userName,
+                        items: items
+                    });
+                });
+
             } catch (err) {
                 console.error('Gagal ambil FCM token:', err);
             }
@@ -401,7 +415,7 @@
                     }
                 });
                 if (!isInitialLoadOrders && newOrdersCount > 0 && latestNewOrder) {
-                    showOrderNotification(latestNewOrder);
+                    // Tidak ada notifikasi di sini, biarkan FCM yang menangani
                 }
                 allOrders = [];
                 snapshot.forEach((doc) => {

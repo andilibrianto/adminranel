@@ -60,14 +60,15 @@ module.exports = async (req, res) => {
         let itemsText = items ? items.map(item => item.name).join(', ') : '-';
         if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
 
-        const message = {
-            notification: {
-                title: '🔔 Pesanan Baru RANEL CELL!',
-                body: `${userName || 'Pelanggan'} - ${itemsText}\nTotal: Rp ${total.toLocaleString('id-ID')}`
-            },
+                const message = {
             data: {
-                orderId: orderId,
-                url: './index.html?orderId=' + orderId
+                title: '🔔 Pesanan Baru RANEL CELL!',
+                body: `${userName || 'Pelanggan'} - ${itemsText}\nTotal: Rp ${total.toLocaleString('id-ID')}`,
+                orderId: String(orderId),
+                url: './index.html?orderId=' + orderId,
+                userName: String(userName || ''),
+                total: String(total || 0),
+                items: JSON.stringify(items || [])
             },
             tokens: tokens
         };
