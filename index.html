@@ -129,7 +129,6 @@
         <div class="flex gap-2 mb-6">
             <button onclick="switchTab('orders')" id="tab-orders" class="btn-pk text-sm">Riwayat Pesanan</button>
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm">Data Pengguna</button>
-            <button onclick="switchTab('promo')" id="tab-promo" class="btn-outline text-sm">Promosi</button>
         </div>
 
         <div id="view-orders">
@@ -194,114 +193,6 @@
             </div>
         </div>
     </div>
-
-<!-- TAMPILAN PROMOSI -->
-<div id="view-promo" class="hidden">
-    <div class="card p-6 max-w-2xl mx-auto">
-        <h3 class="text-lg font-bold mb-1">Buat Notifikasi Promosi</h3>
-        <p class="text-xs text-gray-500 mb-6">Isi detail promosi, target, dan jadwal pengiriman.</p>
-        
-        <!-- STEP 1: KONTEN PESAN -->
-        <div class="mb-6">
-            <h4 class="text-xs font-bold text-gray-400 uppercase mb-4 pb-2 border-b border-gray-800">Konten Pesan</h4>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Judul Promosi</label>
-                    <input type="text" id="promo-title" class="form-input" placeholder="contoh: Promo Akhir Tahun!">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
-                    <textarea id="promo-body" rows="4" class="form-input" placeholder="Dapatkan diskon 50% untuk semua produk..."></textarea>
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">URL Gambar (Opsional)</label>
-                    <input type="text" id="promo-image" class="form-input" placeholder="https://.../gambar.png">
-                </div>
-            </div>
-        </div>
-
-        <!-- STEP 2: TARGET -->
-        <div class="mb-6">
-            <h4 class="text-xs font-bold text-gray-400 uppercase mb-4 pb-2 border-b border-gray-800">Target</h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Aplikasi Target</label>
-                    <select id="promo-target-app" class="form-input">
-                        <option value="ranel_web">Ranel Web</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Segmen Pengguna</label>
-                    <select id="promo-target-segment" class="form-input">
-                        <option value="all">Semua Pengguna</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- STEP 3: SCHEDULING -->
-        <div class="mb-6">
-            <h4 class="text-xs font-bold text-gray-400 uppercase mb-4 pb-2 border-b border-gray-800">Scheduling</h4>
-            <div class="flex flex-col sm:flex-row sm:gap-6 gap-3 mb-4 text-sm">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="schedule-type" value="one_time" checked onchange="toggleScheduleUI()" class="accent-pk">
-                    <span>One time notification</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="schedule-type" value="recurring" onchange="toggleScheduleUI()" class="accent-pk">
-                    <span>Recurring notifications</span>
-                </label>
-            </div>
-
-            <div class="p-4 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
-                <!-- Opsi One Time -->
-                <div id="one-time-options" class="space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:gap-6 gap-3 text-sm">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="one-time-type" value="now" checked onchange="toggleDateTime()" class="accent-pk">
-                            <span>Now (Kirim Sekarang)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="one-time-type" value="scheduled" onchange="toggleDateTime()" class="accent-pk">
-                            <span>Scheduled (Atur Waktu)</span>
-                        </label>
-                    </div>
-                    <div id="schedule-datetime-wrapper" class="hidden">
-                        <label class="text-xs text-gray-500 mb-1 block">Tanggal & Waktu</label>
-                        <input type="datetime-local" id="promo-schedule-time" class="form-input">
-                    </div>
-                </div>
-
-                <!-- Opsi Recurring -->
-                <div id="recurring-options" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Frekuensi</label>
-                        <select id="promo-frequency" class="form-input">
-                            <option value="daily">Daily (Harian)</option>
-                            <option value="custom">Custom...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Waktu Kirim</label>
-                        <input type="time" id="promo-recurring-time" class="form-input" value="12:00">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Mulai Dari</label>
-                        <input type="date" id="promo-start-date" class="form-input">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-500 mb-1 block">Berakhir Pada (Opsional)</label>
-                        <input type="date" id="promo-end-date" class="form-input">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <button onclick="sendPromotion()" class="btn-pk w-full mt-2">
-            <i class="fa-solid fa-paper-plane mr-2"></i> Kirim / Simpan Jadwal
-        </button>
-    </div>
-</div>
 
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
@@ -717,30 +608,20 @@
         }
 
         function switchTab(tabName) {
-    // Sembunyikan semua view
-    document.getElementById('view-orders').classList.add('hidden');
-    document.getElementById('view-users').classList.add('hidden');
-    document.getElementById('view-promo').classList.add('hidden');
-    
-    // Reset semua tab ke outline
-    document.getElementById('tab-orders').className = 'btn-outline text-sm';
-    document.getElementById('tab-users').className = 'btn-outline text-sm';
-    document.getElementById('tab-promo').className = 'btn-outline text-sm';
-
-    // Tampilkan view yang dipilih dan aktifkan tab
-    if (tabName === 'orders') {
-        document.getElementById('view-orders').classList.remove('hidden');
-        document.getElementById('tab-orders').className = 'btn-pk text-sm';
-    } else if (tabName === 'users') {
-        document.getElementById('view-users').classList.remove('hidden');
-        document.getElementById('tab-users').className = 'btn-pk text-sm';
-        const tbody = document.getElementById('users-table-body');
-        if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
-    } else if (tabName === 'promo') {
-        document.getElementById('view-promo').classList.remove('hidden');
-        document.getElementById('tab-promo').className = 'btn-pk text-sm';
-    }
-}
+            if (tabName === 'orders') {
+                document.getElementById('view-orders').classList.remove('hidden');
+                document.getElementById('view-users').classList.add('hidden');
+                document.getElementById('tab-orders').className = 'btn-pk text-sm';
+                document.getElementById('tab-users').className = 'btn-outline text-sm';
+            } else {
+                document.getElementById('view-orders').classList.add('hidden');
+                document.getElementById('view-users').classList.remove('hidden');
+                document.getElementById('tab-orders').className = 'btn-outline text-sm';
+                document.getElementById('tab-users').className = 'btn-pk text-sm';
+                const tbody = document.getElementById('users-table-body');
+                if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
+            }
+        }
 
                 function loadUsers() {
             const tbody = document.getElementById('users-table-body');
@@ -832,95 +713,7 @@
                 } catch (e) { console.error("Gagal membuat notifikasi:", e); }
             }
         }
-// Fungsi untuk toggle antara One Time dan Recurring
-function toggleScheduleUI() {
-    const type = document.querySelector('input[name="schedule-type"]:checked').value;
-    const oneTimeOpts = document.getElementById('one-time-options');
-    const recurringOpts = document.getElementById('recurring-options');
-    
-    if (type === 'one_time') {
-        oneTimeOpts.classList.remove('hidden');
-        recurringOpts.classList.add('hidden');
-        toggleDateTime(); // Cek apakah scheduled dipilih
-    } else {
-        oneTimeOpts.classList.add('hidden');
-        recurringOpts.classList.remove('hidden');
-    }
-}
 
-// Fungsi untuk menampilkan/menyembunyikan input tanggal (One Time)
-function toggleDateTime() {
-    const oneTimeType = document.querySelector('input[name="one-time-type"]:checked').value;
-    const wrapper = document.getElementById('schedule-datetime-wrapper');
-    if (oneTimeType === 'scheduled') {
-        wrapper.classList.remove('hidden');
-    } else {
-        wrapper.classList.add('hidden');
-    }
-}
-
-// Listener agar fungsi toggleDateTime jalan saat radio di-klik
-document.addEventListener('change', function(e){
-    if (e.target.name === 'one-time-type') {
-        toggleDateTime();
-    }
-});
-
-// Fungsi utama untuk mengirim data Promosi
-async function sendPromotion() {
-    const title = document.getElementById('promo-title').value.trim();
-    const body = document.getElementById('promo-body').value.trim();
-    const imageUrl = document.getElementById('promo-image').value.trim();
-    const targetApp = document.getElementById('promo-target-app').value;
-    
-    if (!title || !body) {
-        showToast("Judul dan Isi Pesan wajib diisi!");
-        return;
-    }
-
-    const scheduleType = document.querySelector('input[name="schedule-type"]:checked').value;
-    let payload = { title, body, imageUrl, targetApp, scheduleType };
-
-    if (scheduleType === 'one_time') {
-        const oneTimeType = document.querySelector('input[name="one-time-type"]:checked').value;
-        payload.scheduleOption = oneTimeType;
-        if (oneTimeType === 'scheduled') {
-            payload.scheduledTime = document.getElementById('promo-schedule-time').value;
-            if(!payload.scheduledTime) {
-                showToast("Pilih tanggal dan waktu jadwal terlebih dahulu!");
-                return;
-            }
-        }
-    } else {
-        payload.frequency = document.getElementById('promo-frequency').value;
-        payload.recurringTime = document.getElementById('promo-recurring-time').value;
-        payload.startDate = document.getElementById('promo-start-date').value;
-        payload.endDate = document.getElementById('promo-end-date').value;
-        if(!payload.startDate || !payload.recurringTime) {
-            showToast("Lengkapi tanggal mulai dan waktu recurring!");
-            return;
-        }
-    }
-
-    showLoading();
-    try {
-        const response = await fetch('/api/send-promo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-        hideLoading();
-        if (response.ok) {
-            showToast(result.message || "Promosi berhasil diproses!");
-        } else {
-            alert("Gagal: " + result.error);
-        }
-    } catch (err) {
-        hideLoading();
-        alert("Terjadi error koneksi ke server.");
-    }
-}
         function showToast(msg) {
             const t = document.createElement('div');
             t.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 font-medium text-sm';
@@ -928,42 +721,7 @@ async function sendPromotion() {
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
-async function sendPromotion() {
-    const title = document.getElementById('promo-title').value.trim();
-    const body = document.getElementById('promo-body').value.trim();
-    const imageUrl = document.getElementById('promo-image').value.trim();
 
-    if (!title || !body) {
-        showToast("Judul dan Isi Pesan wajib diisi!");
-        return;
-    }
-
-    showLoading();
-    try {
-        // Panggil API backend Vercel untuk mengirim notifikasi ke user
-        const response = await fetch('/api/send-promo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, body, imageUrl })
-        });
-
-        const result = await response.json();
-        hideLoading();
-
-        if (response.ok) {
-            showToast("Notifikasi promosi berhasil dikirim ke semua user!");
-            // Kosongkan form
-            document.getElementById('promo-title').value = '';
-            document.getElementById('promo-body').value = '';
-            document.getElementById('promo-image').value = '';
-        } else {
-            alert("Gagal mengirim: " + result.error);
-        }
-    } catch (err) {
-        hideLoading();
-        alert("Terjadi error koneksi ke server.");
-    }
-}
         // Tangkap pesan dari Service Worker (saat notifikasi diklik saat aplikasi dibuka)
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'OPEN_ORDER_DETAIL') {
