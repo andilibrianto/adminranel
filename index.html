@@ -195,15 +195,15 @@
         </div>
     </div>
 
-<div id="view-promo" class="hidden">
-    <div class="card p-4 md:p-8 max-w-3xl mx-auto">
+<div id="view-promo" class="hidden w-full">
+    <div class="card p-4 md:p-6 w-full">
         <h3 class="text-lg font-bold mb-1">Buat Notifikasi Promosi</h3>
         <p class="text-xs text-gray-500 mb-6">Isi detail promosi, target, dan jadwal pengiriman.</p>
         
         <!-- STEP 1: KONTEN PESAN -->
         <div class="space-y-4 mb-8 border-b border-gray-800 pb-6">
             <h4 class="text-sm font-bold text-gray-300 uppercase">Konten Pesan</h4>
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs text-gray-500 mb-1 block">Judul Promosi</label>
                     <input type="text" id="promo-title" class="form-input" placeholder="contoh: Promo Akhir Tahun!">
@@ -222,7 +222,7 @@
         <!-- STEP 2: TARGET -->
         <div class="space-y-4 mb-8 border-b border-gray-800 pb-6">
             <h4 class="text-sm font-bold text-gray-300 uppercase">Target</h4>
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs text-gray-500 mb-1 block">Aplikasi Target</label>
                     <select id="promo-target-app" class="form-input">
@@ -239,9 +239,9 @@
         </div>
 
         <!-- STEP 3: SCHEDULING -->
-        <div class="space-y-4 mb-8">
+        <div class="space-y-4 mb-6">
             <h4 class="text-sm font-bold text-gray-300 uppercase">Scheduling</h4>
-            <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex flex-col md:flex-row gap-4 text-sm">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="schedule-type" value="one_time" checked onchange="toggleScheduleUI()" class="accent-pk">
                     <span>One time notification</span>
@@ -253,8 +253,8 @@
             </div>
 
             <!-- Opsi One Time -->
-            <div id="one-time-options" class="grid md:grid-cols-2 gap-4 mt-4 p-4 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
-                <div class="flex flex-col gap-2">
+            <div id="one-time-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
+                <div class="flex flex-col gap-2 text-sm">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="one-time-type" value="now" checked onchange="toggleDateTime()" class="accent-pk">
                         <span>Now (Kirim Sekarang)</span>
@@ -271,7 +271,7 @@
             </div>
 
             <!-- Opsi Recurring -->
-            <div id="recurring-options" class="hidden grid md:grid-cols-2 gap-4 mt-4 p-4 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
+            <div id="recurring-options" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
                 <div>
                     <label class="text-xs text-gray-500 mb-1 block">Frekuensi</label>
                     <select id="promo-frequency" class="form-input">
