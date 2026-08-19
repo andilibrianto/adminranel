@@ -129,6 +129,7 @@
         <div class="flex gap-2 mb-6">
             <button onclick="switchTab('orders')" id="tab-orders" class="btn-pk text-sm">Riwayat Pesanan</button>
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm">Data Pengguna</button>
+            <button onclick="switchTab('promo')" id="tab-promo" class="btn-outline text-sm">Promosi</button>
         </div>
 
         <div id="view-orders">
@@ -193,6 +194,39 @@
             </div>
         </div>
     </div>
+
+<div id="view-promo" class="hidden">
+    <div class="card p-6 max-w-2xl mx-auto">
+        <h3 class="text-lg font-bold mb-4">Buat Notifikasi Promosi</h3>
+        <p class="text-xs text-gray-500 mb-6">Notifikasi akan dikirim ke semua perangkat pengguna yang terdaftar.</p>
+        
+        <div class="space-y-4">
+            <!-- Step 1: Judul -->
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">Judul Promosi</label>
+                <input type="text" id="promo-title" class="form-input" placeholder="contoh: Promo Akhir Tahun!">
+            </div>
+            
+            <!-- Step 2: Isi Pesan -->
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
+                <textarea id="promo-body" rows="4" class="form-input" placeholder="Dapatkan diskon 50% untuk semua produk..."></textarea>
+            </div>
+            
+            <!-- Step 3: URL Gambar (Opsional) -->
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">URL Gambar (Opsional)</label>
+                <input type="text" id="promo-image" class="form-input" placeholder="https://.../gambar-promo.png">
+            </div>
+            
+            <!-- Step 4: Additional Options (DIHAPUS SESUAI PERMINTAAN ANDA) -->
+
+            <button onclick="sendPromotion()" class="btn-pk w-full mt-4">
+                <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Notifikasi
+            </button>
+        </div>
+    </div>
+</div>
 
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
@@ -608,20 +642,30 @@
         }
 
         function switchTab(tabName) {
-            if (tabName === 'orders') {
-                document.getElementById('view-orders').classList.remove('hidden');
-                document.getElementById('view-users').classList.add('hidden');
-                document.getElementById('tab-orders').className = 'btn-pk text-sm';
-                document.getElementById('tab-users').className = 'btn-outline text-sm';
-            } else {
-                document.getElementById('view-orders').classList.add('hidden');
-                document.getElementById('view-users').classList.remove('hidden');
-                document.getElementById('tab-orders').className = 'btn-outline text-sm';
-                document.getElementById('tab-users').className = 'btn-pk text-sm';
-                const tbody = document.getElementById('users-table-body');
-                if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
-            }
-        }
+    // Sembunyikan semua view
+    document.getElementById('view-orders').classList.add('hidden');
+    document.getElementById('view-users').classList.add('hidden');
+    document.getElementById('view-promo').classList.add('hidden');
+    
+    // Reset semua tab ke outline
+    document.getElementById('tab-orders').className = 'btn-outline text-sm';
+    document.getElementById('tab-users').className = 'btn-outline text-sm';
+    document.getElementById('tab-promo').className = 'btn-outline text-sm';
+
+    // Tampilkan view yang dipilih dan aktifkan tab
+    if (tabName === 'orders') {
+        document.getElementById('view-orders').classList.remove('hidden');
+        document.getElementById('tab-orders').className = 'btn-pk text-sm';
+    } else if (tabName === 'users') {
+        document.getElementById('view-users').classList.remove('hidden');
+        document.getElementById('tab-users').className = 'btn-pk text-sm';
+        const tbody = document.getElementById('users-table-body');
+        if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
+    } else if (tabName === 'promo') {
+        document.getElementById('view-promo').classList.remove('hidden');
+        document.getElementById('tab-promo').className = 'btn-pk text-sm';
+    }
+}
 
                 function loadUsers() {
             const tbody = document.getElementById('users-table-body');
@@ -721,7 +765,42 @@
             document.body.appendChild(t);
             setTimeout(() => t.remove(), 3000);
         }
+async function sendPromotion() {
+    const title = document.getElementById('promo-title').value.trim();
+    const body = document.getElementById('promo-body').value.trim();
+    const imageUrl = document.getElementById('promo-image').value.trim();
 
+    if (!title || !body) {
+        showToast("Judul dan Isi Pesan wajib diisi!");
+        return;
+    }
+
+    showLoading();
+    try {
+        // Panggil API backend Vercel untuk mengirim notifikasi ke user
+        const response = await fetch('/api/send-promo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, body, imageUrl })
+        });
+
+        const result = await response.json();
+        hideLoading();
+
+        if (response.ok) {
+            showToast("Notifikasi promosi berhasil dikirim ke semua user!");
+            // Kosongkan form
+            document.getElementById('promo-title').value = '';
+            document.getElementById('promo-body').value = '';
+            document.getElementById('promo-image').value = '';
+        } else {
+            alert("Gagal mengirim: " + result.error);
+        }
+    } catch (err) {
+        hideLoading();
+        alert("Terjadi error koneksi ke server.");
+    }
+}
         // Tangkap pesan dari Service Worker (saat notifikasi diklik saat aplikasi dibuka)
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'OPEN_ORDER_DETAIL') {
