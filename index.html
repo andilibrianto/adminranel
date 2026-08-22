@@ -294,24 +294,40 @@
     </div>
 
     <div id="edit-banner-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-        <div class="card p-6 w-full max-w-lg my-8 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold">Kelola Banner</h3>
-                <button onclick="closeEditBannerModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            
-            <input type="hidden" id="banner-doc-id">
-            
-            <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Link Gambar Banner (URL)</label>
-                <input type="text" id="banner-imageUrl" class="form-input" placeholder="https://... atau ./Gambar/Banner_Promo_1.png">
-            </div>
-            
-            <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Judul Promo</label>
-                <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART">
-            </div>
-            
+    <div class="card p-6 w-full max-w-lg my-8 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold">Kelola Banner</h3>
+            <button onclick="closeEditBannerModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        
+        <input type="hidden" id="banner-doc-id">
+        
+        <div class="mb-4">
+            <label class="text-xs text-gray-500 mb-1 block">Jenis Konten</label>
+            <select id="banner-type" class="form-input" onchange="toggleBannerFields()">
+                <option value="promo">Promosi</option>
+                <option value="info">Informasi</option>
+            </select>
+        </div>
+        
+        <div class="mb-4">
+            <label class="text-xs text-gray-500 mb-1 block">Link Gambar Banner (URL)</label>
+            <input type="text" id="banner-imageUrl" class="form-input" placeholder="https://... atau ./Gambar/Banner_Promo_1.png">
+        </div>
+        
+        <div class="mb-4">
+            <label class="text-xs text-gray-500 mb-1 block">Judul Promo / Informasi</label>
+            <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART atau Pengumuman Libur">
+        </div>
+        
+        <!-- FIELD KHUSUS INFORMASI (Default: Hidden) -->
+        <div id="info-only-fields" class="mb-4 hidden">
+            <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
+            <textarea id="banner-isiPesan" class="form-input" rows="5" placeholder="Tulis isi pesan informasi disini. Enter untuk baris baru." style="resize: vertical;"></textarea>
+        </div>
+
+        <!-- FIELD KHUSUS PROMOSI (Default: Shown) -->
+        <div id="promo-only-fields">
             <div class="mb-4">
                 <label class="text-xs text-gray-500 mb-1 block">Periode</label>
                 <input type="text" id="banner-periode" class="form-input" placeholder="17 - 31 Agustus 2026">
@@ -331,17 +347,18 @@
                 <label class="text-xs text-gray-500 mb-1 block">Cara Mengikuti (Pisahkan dengan Enter)</label>
                 <textarea id="banner-caraIkut" class="form-input" rows="4" placeholder="1. Lakukan transaksi...&#10;2. Hubungi admin..."></textarea>
             </div>
-
-            <div class="mb-4 flex items-center gap-2">
-                <input type="checkbox" id="banner-active" class="w-4 h-4 accent-pk">
-                <label for="banner-active" class="text-sm text-gray-300">Tampilkan Banner di PWA Pelanggan</label>
-            </div>
-
-            <button onclick="saveBannerChange()" class="btn-pk w-full mt-4">Simpan Banner</button>
-            <button onclick="closeEditBannerModal()" class="btn-outline w-full mt-3">Batal</button>
-            <button onclick="deleteBanner()" id="delete-banner-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Banner</button>
         </div>
+
+        <div class="mb-4 flex items-center gap-2">
+            <input type="checkbox" id="banner-active" class="w-4 h-4 accent-pk">
+            <label for="banner-active" class="text-sm text-gray-300">Tampilkan di PWA Pelanggan</label>
+        </div>
+
+        <button onclick="saveBannerChange()" class="btn-pk w-full mt-4">Simpan Banner</button>
+        <button onclick="closeEditBannerModal()" class="btn-outline w-full mt-3">Batal</button>
+        <button onclick="deleteBanner()" id="delete-banner-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Banner</button>
     </div>
+</div>
 
     <script>
         let currentDocId = null;
@@ -690,58 +707,89 @@
             `).join('');
         }
 
-        function openEditBannerModal(id = null) {
-            const deleteBtn = document.getElementById('delete-banner-btn');
-            if (id) {
-                const b = allBanners.find(x => x.id === id);
-                if (!b) return;
-                document.getElementById('banner-doc-id').value = id;
-                document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
-                document.getElementById('banner-title').value = b.data.title || '';
-                document.getElementById('banner-periode').value = b.data.periode || '';
-                document.getElementById('banner-hadiah').value = b.data.hadiah || '';
-                document.getElementById('banner-pengumuman').value = b.data.pengumuman || '';
-                document.getElementById('banner-caraIkut').value = (b.data.caraIkut || []).join('\n');
-                document.getElementById('banner-active').checked = b.data.active || false;
-                deleteBtn.classList.remove('hidden');
-            } else {
-                document.getElementById('banner-doc-id').value = '';
-                document.getElementById('banner-imageUrl').value = '';
-                document.getElementById('banner-title').value = '';
-                document.getElementById('banner-periode').value = '';
-                document.getElementById('banner-hadiah').value = '';
-                document.getElementById('banner-pengumuman').value = '';
-                document.getElementById('banner-caraIkut').value = '';
-                document.getElementById('banner-active').checked = true;
-                deleteBtn.classList.add('hidden');
-            }
-            document.getElementById('edit-banner-modal').classList.remove('hidden');
-        }
+        // Fungsi untuk menampilkan/menyembunyikan field berdasarkan jenis konten
+function toggleBannerFields() {
+    const type = document.getElementById('banner-type').value;
+    if (type === 'info') {
+        document.getElementById('promo-only-fields').classList.add('hidden');
+        document.getElementById('info-only-fields').classList.remove('hidden');
+    } else {
+        document.getElementById('promo-only-fields').classList.remove('hidden');
+        document.getElementById('info-only-fields').classList.add('hidden');
+    }
+}
 
-        function closeEditBannerModal() { document.getElementById('edit-banner-modal').classList.add('hidden'); }
+function openEditBannerModal(id = null) {
+    const deleteBtn = document.getElementById('delete-banner-btn');
+    if (id) {
+        const b = allBanners.find(x => x.id === id);
+        if (!b) return;
+        document.getElementById('banner-doc-id').value = id;
+        document.getElementById('banner-type').value = b.data.type || 'promo';
+        document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
+        document.getElementById('banner-title').value = b.data.title || '';
+        document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
+        document.getElementById('banner-periode').value = b.data.periode || '';
+        document.getElementById('banner-hadiah').value = b.data.hadiah || '';
+        document.getElementById('banner-pengumuman').value = b.data.pengumuman || '';
+        document.getElementById('banner-caraIkut').value = (b.data.caraIkut || []).join('\n');
+        document.getElementById('banner-active').checked = b.data.active || false;
+        deleteBtn.classList.remove('hidden');
+    } else {
+        document.getElementById('banner-doc-id').value = '';
+        document.getElementById('banner-type').value = 'promo';
+        document.getElementById('banner-imageUrl').value = '';
+        document.getElementById('banner-title').value = '';
+        document.getElementById('banner-isiPesan').value = '';
+        document.getElementById('banner-periode').value = '';
+        document.getElementById('banner-hadiah').value = '';
+        document.getElementById('banner-pengumuman').value = '';
+        document.getElementById('banner-caraIkut').value = '';
+        document.getElementById('banner-active').checked = true;
+        deleteBtn.classList.add('hidden');
+    }
+    // Panggil fungsi toggle untuk merapikan tampilan form awal
+    toggleBannerFields();
+    document.getElementById('edit-banner-modal').classList.remove('hidden');
+}
 
-        async function saveBannerChange() {
+async function saveBannerChange() {
     const id = document.getElementById('banner-doc-id').value;
+    const type = document.getElementById('banner-type').value;
+    
+    // Data dasar yang sama untuk keduanya
     const data = {
+        type: type,
         imageUrl: document.getElementById('banner-imageUrl').value,
         title: document.getElementById('banner-title').value,
-        periode: document.getElementById('banner-periode').value,
-        hadiah: document.getElementById('banner-hadiah').value,
-        pengumuman: document.getElementById('banner-pengumuman').value,
-        caraIkut: document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== ''),
         active: document.getElementById('banner-active').checked
     };
+
+    if (type === 'info') {
+        data.isiPesan = document.getElementById('banner-isiPesan').value;
+        // Kosongkan field promo agar tidak ikut tersimpan
+        data.periode = '';
+        data.hadiah = '';
+        data.pengumuman = '';
+        data.caraIkut = [];
+    } else {
+        data.periode = document.getElementById('banner-periode').value;
+        data.hadiah = document.getElementById('banner-hadiah').value;
+        data.pengumuman = document.getElementById('banner-pengumuman').value;
+        data.caraIkut = document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== '');
+        // Kosongkan field info
+        data.isiPesan = '';
+    }
+
     if (!data.imageUrl) { alert("URL Gambar wajib diisi!"); return; }
     showLoading();
     try {
         const { db, doc, setDoc, collection, updateDoc } = window.firebaseAdmin;
         if (!id) {
-            // Jika banner baru, gunakan setDoc
             const newDocRef = doc(collection(db, "banners"));
             await setDoc(newDocRef, data);
             showToast("Banner berhasil ditambahkan!");
         } else {
-            // Jika edit banner, gunakan updateDoc agar semua field tertimpa pasti
             await updateDoc(doc(db, "banners", id), data);
             showToast("Banner berhasil diperbarui!");
         }
