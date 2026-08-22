@@ -752,7 +752,9 @@ function openEditBannerModal(id = null) {
     toggleBannerFields();
     document.getElementById('edit-banner-modal').classList.remove('hidden');
 }
-
+function closeEditBannerModal() { 
+    document.getElementById('edit-banner-modal').classList.add('hidden'); 
+}
 async function saveBannerChange() {
     const id = document.getElementById('banner-doc-id').value;
     const type = document.getElementById('banner-type').value;
