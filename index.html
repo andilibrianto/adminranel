@@ -12,11 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="ADMIN RANEL">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
-        <script type="module">
+    <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-        import { getFirestore, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+        import { getFirestore, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
         import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
         const firebaseConfig = {
@@ -36,13 +36,13 @@
 
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const messaging = getMessaging(app); // Tambahkan ini
+        const messaging = getMessaging(app);
 
         window.firebaseAdmin = {
-    auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc,
-    signInWithEmailAndPassword, signOut, onAuthStateChanged,
-    messaging, getMessaging, getToken, onMessage
-};
+            auth, db, collection, query, onSnapshot, doc, updateDoc, getDocs, setDoc, deleteDoc,
+            signInWithEmailAndPassword, signOut, onAuthStateChanged,
+            messaging, getMessaging, getToken, onMessage
+        };
         window.dispatchEvent(new Event('firebase-admin-ready'));
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -129,6 +129,7 @@
         <div class="flex gap-2 mb-6">
             <button onclick="switchTab('orders')" id="tab-orders" class="btn-pk text-sm">Riwayat Pesanan</button>
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm">Data Pengguna</button>
+            <button onclick="switchTab('banners')" id="tab-banners" class="btn-outline text-sm">Banner Promo</button>
         </div>
 
         <div id="view-orders">
@@ -153,7 +154,6 @@
                     <option>Refund</option>
                 </select>
             </div>
-
             <div class="card overflow-x-auto">
                 <table>
                     <thead>
@@ -192,6 +192,18 @@
                 </table>
             </div>
         </div>
+
+        <div id="view-banners" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Kelola Banner Promo</h2>
+                <button onclick="openEditBannerModal()" class="btn-pk text-sm">
+                    <i class="fa-solid fa-plus mr-2"></i> Tambah Banner
+                </button>
+            </div>
+            <div id="banners-list" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <p class="text-gray-500 text-sm col-span-full">Klik tab ini untuk memuat data banner.</p>
+            </div>
+        </div>
     </div>
 
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
@@ -200,7 +212,6 @@
                 <h3 class="text-lg font-bold">Edit Detail Transaksi</h3>
                 <button onclick="closeEditModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2 mb-2">
                     <label class="text-xs text-gray-500 mb-1 block">ID Transaksi (Tidak Bisa Diubah)</label>
@@ -282,20 +293,65 @@
         </div>
     </div>
 
-        <script>
+    <div id="edit-banner-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+        <div class="card p-6 w-full max-w-lg my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold">Kelola Banner</h3>
+                <button onclick="closeEditBannerModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <input type="hidden" id="banner-doc-id">
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Link Gambar Banner (URL)</label>
+                <input type="text" id="banner-imageUrl" class="form-input" placeholder="https://... atau ./Gambar/Banner_Promo_1.png">
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Judul Promo</label>
+                <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART">
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Periode</label>
+                <input type="text" id="banner-periode" class="form-input" placeholder="17 - 31 Agustus 2026">
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Total Hadiah / Keuntungan</label>
+                <input type="text" id="banner-hadiah" class="form-input" placeholder="Rp 1.7 Miliar">
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Pemenang / Pengumuman</label>
+                <input type="text" id="banner-pengumuman" class="form-input" placeholder="7 Orang, 5 September 2026">
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Cara Mengikuti (Pisahkan dengan Enter)</label>
+                <textarea id="banner-caraIkut" class="form-input" rows="4" placeholder="1. Lakukan transaksi...&#10;2. Hubungi admin..."></textarea>
+            </div>
+
+            <div class="mb-4 flex items-center gap-2">
+                <input type="checkbox" id="banner-active" class="w-4 h-4 accent-pk">
+                <label for="banner-active" class="text-sm text-gray-300">Tampilkan Banner di PWA Pelanggan</label>
+            </div>
+
+            <button onclick="saveBannerChange()" class="btn-pk w-full mt-4">Simpan Banner</button>
+            <button onclick="closeEditBannerModal()" class="btn-outline w-full mt-3">Batal</button>
+            <button onclick="deleteBanner()" id="delete-banner-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Banner</button>
+        </div>
+    </div>
+
+    <script>
         let currentDocId = null;
         let allOrders = [];
         let pendingOrderId = null;
         let isInitialLoadOrders = true;
+        let allBanners = [];
 
-        function showLoading() {
-            const el = document.getElementById('loading-overlay');
-            if (el) el.classList.remove('hidden');
-        }
-        function hideLoading() {
-            const el = document.getElementById('loading-overlay');
-            if (el) el.classList.add('hidden');
-        }
+        function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
+        function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
         window.addEventListener('firebase-admin-ready', function() {
             const { auth, onAuthStateChanged } = window.firebaseAdmin;
@@ -305,14 +361,9 @@
                 if (user) {
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('dashboard-view').classList.remove('hidden');
-                    
-                    // CEK URL PARAMETER (Jika notifikasi diklik saat aplikasi tertutup)
                     const urlParams = new URLSearchParams(window.location.search);
                     const orderIdFromUrl = urlParams.get('orderId');
-                    if (orderIdFromUrl) {
-                        pendingOrderId = String(orderIdFromUrl); // Simpan ID sebagai String
-                    }
-                    
+                    if (orderIdFromUrl) pendingOrderId = String(orderIdFromUrl);
                     loadOrders();
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
@@ -324,53 +375,28 @@
         function toggleAdminPassword(btnEl) {
             const input = document.getElementById('admin-pass');
             const icon = btnEl.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
+            if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); } 
+            else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
         }
-                // --- FCM SETUP ---
+
         async function setupFCM() {
             const { messaging, getToken, db, doc, setDoc, onMessage } = window.firebaseAdmin;
             try {
                 const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
                 await navigator.serviceWorker.ready;
-
-                const currentToken = await getToken(messaging, { 
-                    vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0',
-                    serviceWorkerRegistration: registration 
-                });
-                
-                if (currentToken) {
-                    await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
-                }
-
-                // Tangkap pesan saat aplikasi Admin sedang dibuka (Foreground)
+                const currentToken = await getToken(messaging, { vapidKey: 'BPduMClEXKWN2l3Z8aTpsyJ3b5S5z2lS31NEp48cwczzAueuPTS_aYZ8MUTQ9NvqsuFmJCH6d0gFexcSG9xpWK0', serviceWorkerRegistration: registration });
+                if (currentToken) await setDoc(doc(db, "admin_tokens", currentToken), { token: currentToken });
                 onMessage(messaging, (payload) => {
-                    console.log('Pesan diterima di foreground:', payload);
                     const orderId = payload.data?.orderId || '';
                     const total = payload.data?.total ? parseInt(payload.data.total) : 0;
                     const userName = payload.data?.userName || 'Pelanggan';
                     let items = [];
                     try { items = JSON.parse(payload.data?.items || '[]'); } catch(e) {}
-                    
-                    showOrderNotification({
-                        orderId: orderId,
-                        total: total,
-                        userName: userName,
-                        items: items
-                    });
+                    showOrderNotification({ orderId, total, userName, items });
                 });
-
-            } catch (err) {
-                console.error('Gagal ambil FCM token:', err);
-            }
+            } catch (err) { console.error('Gagal ambil FCM token:', err); }
         }
+
         function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
@@ -394,61 +420,37 @@
                     errorEl.classList.remove('hidden');
                 });
         }
+
         function adminLogout() {
             document.getElementById('admin-email').value = '';
             document.getElementById('admin-pass').value = '';
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
 
-                function loadOrders() {
+        function loadOrders() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
             const tbody = document.getElementById('orders-table-body');
             if (allOrders.length === 0) showLoading();
             const q = query(collection(db, "Riwayat_Pesanan"));
             onSnapshot(q, (snapshot) => {
-                let newOrdersCount = 0;
-                let latestNewOrder = null;
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        newOrdersCount++;
-                        latestNewOrder = change.doc.data();
-                    }
-                });
-                if (!isInitialLoadOrders && newOrdersCount > 0 && latestNewOrder) {
-                    // Tidak 
-                }
                 allOrders = [];
-                snapshot.forEach((doc) => {
-                    allOrders.push({ id: doc.id, data: doc.data() });
-                });
-
-                // Fungsi parser tanggal yang lebih akurat
+                snapshot.forEach((doc) => allOrders.push({ id: doc.id, data: doc.data() }));
                 function parseDate(dateStr) {
                     if (!dateStr) return 0;
                     let parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?/);
-                    if (parts) {
-                        return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0, parts[6] || 0).getTime();
-                    }
+                    if (parts) return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0, parts[6] || 0).getTime();
                     let dateObj = new Date(dateStr);
                     return isNaN(dateObj) ? 0 : dateObj.getTime();
                 }
-
-                // Urutkan berdasarkan tanggal transaksi: b - a (Terbaru ke Terlama)
                 allOrders.sort((a, b) => parseDate(b.data.transactionDate) - parseDate(a.data.transactionDate));
-
                 renderTable(allOrders);
                 hideLoading();
                 isInitialLoadOrders = false;
-
                 if (pendingOrderId) {
                     const orderObj = allOrders.find(o => o.id === pendingOrderId);
-                    if (orderObj) {
-                        openEditModal(pendingOrderId);
-                        pendingOrderId = null;
-                    }
+                    if (orderObj) { openEditModal(pendingOrderId); pendingOrderId = null; }
                 }
             }, (error) => {
-                console.error("Error fetching orders: ", error);
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
                 hideLoading();
             });
@@ -456,10 +458,7 @@
 
         function renderTable(orders) {
             const tbody = document.getElementById('orders-table-body');
-            if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada transaksi ditemukan.</td></tr>`;
-                return;
-            }
+            if (orders.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada transaksi ditemukan.</td></tr>`; return; }
             tbody.innerHTML = orders.map(order => {
                 const d = order.data;
                 let statusClass = 'badge-yellow';
@@ -486,8 +485,7 @@
                                 <i class="fa-solid fa-pen mr-1"></i> Edit
                             </button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             }).join('');
         }
 
@@ -545,22 +543,17 @@
                             </div>
                             ${idPels !== '' ? `
                             <div class="mt-2 pt-2 border-t border-[#222]">
-                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/baris baru)</label>
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter)</label>
                                 <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="3" style="resize: vertical;">${idPels}</textarea>
-                            </div>
-                            ` : ''}
-                        </div>
-                    `;
+                            </div>` : ''}
+                        </div>`;
                 });
-            } else {
-                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Tidak ada barang.</p>';
-            }
+            } else { itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Tidak ada barang.</p>'; }
             document.getElementById('edit-modal').classList.remove('hidden');
         }
-        function closeEditModal() {
-            document.getElementById('edit-modal').classList.add('hidden');
-            currentDocId = null;
-        }
+
+        function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); currentDocId = null; }
+
         async function saveDataChange() {
             if (!currentDocId) return;
             try {
@@ -571,11 +564,7 @@
                     const priceInput = document.querySelector(`.modal-item-price[data-idx="${idx}"]`);
                     const qtyInput = document.querySelector(`.modal-item-qty[data-idx="${idx}"]`);
                     const idpelInput = document.querySelector(`.modal-item-idpel[data-idx="${idx}"]`);
-                    updatedItems.push({
-                        name: nameInput.value,
-                        price: parseInt(priceInput.value) || 0,
-                        quantity: parseInt(qtyInput.value) || 1
-                    });
+                    updatedItems.push({ name: nameInput.value, price: parseInt(priceInput.value) || 0, quantity: parseInt(qtyInput.value) || 1 });
                     if (idpelInput) {
                         const ids = idpelInput.value.split('\n').map(id => id.trim()).filter(id => id !== '');
                         if (ids.length > 0) updatedIdPelanggan[idx] = ids;
@@ -598,32 +587,41 @@
                     idPelanggan: updatedIdPelanggan
                 };
                 const { db, doc, updateDoc } = window.firebaseAdmin;
-                const orderRef = doc(db, "Riwayat_Pesanan", currentDocId);
-                await updateDoc(orderRef, updatedData);
+                await updateDoc(doc(db, "Riwayat_Pesanan", currentDocId), updatedData);
                 showToast("Data transaksi berhasil diperbarui!");
                 closeEditModal();
-            } catch (err) {
-                alert("Gagal menyimpan data. Mohon cek kembali isian form.");
-            }
+            } catch (err) { alert("Gagal menyimpan data. Mohon cek kembali isian form."); }
         }
 
         function switchTab(tabName) {
             if (tabName === 'orders') {
                 document.getElementById('view-orders').classList.remove('hidden');
                 document.getElementById('view-users').classList.add('hidden');
+                document.getElementById('view-banners').classList.add('hidden');
                 document.getElementById('tab-orders').className = 'btn-pk text-sm';
                 document.getElementById('tab-users').className = 'btn-outline text-sm';
-            } else {
+                document.getElementById('tab-banners').className = 'btn-outline text-sm';
+            } else if (tabName === 'users') {
                 document.getElementById('view-orders').classList.add('hidden');
                 document.getElementById('view-users').classList.remove('hidden');
+                document.getElementById('view-banners').classList.add('hidden');
                 document.getElementById('tab-orders').className = 'btn-outline text-sm';
                 document.getElementById('tab-users').className = 'btn-pk text-sm';
+                document.getElementById('tab-banners').className = 'btn-outline text-sm';
                 const tbody = document.getElementById('users-table-body');
                 if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
+            } else if (tabName === 'banners') {
+                document.getElementById('view-orders').classList.add('hidden');
+                document.getElementById('view-users').classList.add('hidden');
+                document.getElementById('view-banners').classList.remove('hidden');
+                document.getElementById('tab-orders').className = 'btn-outline text-sm';
+                document.getElementById('tab-users').className = 'btn-outline text-sm';
+                document.getElementById('tab-banners').className = 'btn-pk text-sm';
+                if (allBanners.length === 0 && document.getElementById('banners-list').innerText.includes('Klik tab ini')) loadBanners();
             }
         }
 
-                function loadUsers() {
+        function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
             showLoading();
@@ -633,57 +631,144 @@
                 onSnapshot(q, (snapshot) => {
                     let usersData = [];
                     snapshot.forEach((doc) => usersData.push(doc.data()));
-
-                    // Fungsi parser tanggal yang lebih akurat
                     function parseDate(dateStr) {
                         if (!dateStr) return 0;
                         let parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?/);
-                        if (parts) {
-                            return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0, parts[6] || 0).getTime();
-                        }
+                        if (parts) return new Date(parts[3], parts[2] - 1, parts[1], parts[4] || 0, parts[5] || 0, parts[6] || 0).getTime();
                         let dateObj = new Date(dateStr);
                         return isNaN(dateObj) ? 0 : dateObj.getTime();
                     }
-
-                    // Urutkan berdasarkan LastSeen: b - a (Terbaru ke Terlama)
                     usersData.sort((a, b) => parseDate(b.LastSeen) - parseDate(a.LastSeen));
-
-                    if (usersData.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`;
-                        hideLoading(); return;
-                    }
+                    if (usersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; hideLoading(); return; }
                     tbody.innerHTML = usersData.map(d => {
                         let createdDate = '-';
-                        if (d.createdAt) {
-                            try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } 
-                            catch(e) { createdDate = d.createdAt; }
-                        }
-                        return `
-                            <tr>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
-                                <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
-                                <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
-                                <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
-                            </tr>
-                        `;
+                        if (d.createdAt) { try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) { createdDate = d.createdAt; } }
+                        return `<tr>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
+                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
+                        </tr>`;
                     }).join('');
                     hideLoading();
-                }, (error) => {
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
-                    hideLoading();
-                });
+                }, (error) => { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; hideLoading(); });
             } catch (err) { hideLoading(); }
+        }
+
+        function loadBanners() {
+            const { db, collection, query, onSnapshot } = window.firebaseAdmin;
+            const listEl = document.getElementById('banners-list');
+            listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Memuat data banner...</p>';
+            const q = query(collection(db, "banners"));
+            onSnapshot(q, (snapshot) => {
+                allBanners = [];
+                snapshot.forEach((doc) => allBanners.push({ id: doc.id, data: doc.data() }));
+                renderBanners();
+            }, (error) => {
+                listEl.innerHTML = '<p class="text-red-400 text-sm col-span-full">Gagal memuat data.</p>';
+            });
+        }
+
+        function renderBanners() {
+            const listEl = document.getElementById('banners-list');
+            if (allBanners.length === 0) {
+                listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner. Klik "Tambah Banner" untuk membuat baru.</p>';
+                return;
+            }
+            listEl.innerHTML = allBanners.map(b => `
+                <div class="card p-3 flex flex-col gap-2">
+                    <img src="${b.data.imageUrl || ''}" class="w-full h-32 object-cover rounded-lg bg-dk-700">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-sm">${b.data.title || 'Tanpa Judul'}</h3>
+                        <p class="text-xs ${b.data.active ? 'text-green-400' : 'text-gray-500'}">${b.data.active ? 'Aktif' : 'Nonaktif'}</p>
+                    </div>
+                    <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5">
+                        <i class="fa-solid fa-pen mr-1"></i> Edit
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function openEditBannerModal(id = null) {
+            const deleteBtn = document.getElementById('delete-banner-btn');
+            if (id) {
+                const b = allBanners.find(x => x.id === id);
+                if (!b) return;
+                document.getElementById('banner-doc-id').value = id;
+                document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
+                document.getElementById('banner-title').value = b.data.title || '';
+                document.getElementById('banner-periode').value = b.data.periode || '';
+                document.getElementById('banner-hadiah').value = b.data.hadiah || '';
+                document.getElementById('banner-pengumuman').value = b.data.pengumuman || '';
+                document.getElementById('banner-caraIkut').value = (b.data.caraIkut || []).join('\n');
+                document.getElementById('banner-active').checked = b.data.active || false;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('banner-doc-id').value = '';
+                document.getElementById('banner-imageUrl').value = '';
+                document.getElementById('banner-title').value = '';
+                document.getElementById('banner-periode').value = '';
+                document.getElementById('banner-hadiah').value = '';
+                document.getElementById('banner-pengumuman').value = '';
+                document.getElementById('banner-caraIkut').value = '';
+                document.getElementById('banner-active').checked = true;
+                deleteBtn.classList.add('hidden');
+            }
+            document.getElementById('edit-banner-modal').classList.remove('hidden');
+        }
+
+        function closeEditBannerModal() { document.getElementById('edit-banner-modal').classList.add('hidden'); }
+
+        async function saveBannerChange() {
+            const id = document.getElementById('banner-doc-id').value;
+            const data = {
+                imageUrl: document.getElementById('banner-imageUrl').value,
+                title: document.getElementById('banner-title').value,
+                periode: document.getElementById('banner-periode').value,
+                hadiah: document.getElementById('banner-hadiah').value,
+                pengumuman: document.getElementById('banner-pengumuman').value,
+                caraIkut: document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== ''),
+                active: document.getElementById('banner-active').checked
+            };
+            if (!data.imageUrl) { alert("URL Gambar wajib diisi!"); return; }
+            showLoading();
+            try {
+                const { db, doc, setDoc, collection } = window.firebaseAdmin;
+                if (!id) {
+                    const newDocRef = doc(collection(db, "banners"));
+                    await setDoc(newDocRef, data);
+                    showToast("Banner berhasil ditambahkan!");
+                } else {
+                    await setDoc(doc(db, "banners", id), data, { merge: true });
+                    showToast("Banner berhasil diperbarui!");
+                }
+                closeEditBannerModal();
+            } catch (err) { alert("Gagal menyimpan banner."); console.error(err); } 
+            finally { hideLoading(); }
+        }
+
+        async function deleteBanner() {
+            const id = document.getElementById('banner-doc-id').value;
+            if (!id) return;
+            if (!confirm("Yakin ingin menghapus banner ini?")) return;
+            showLoading();
+            try {
+                const { db, doc, deleteDoc } = window.firebaseAdmin;
+                await deleteDoc(doc(db, "banners", id));
+                showToast("Banner berhasil dihapus!");
+                closeEditBannerModal();
+            } catch (err) { alert("Gagal menghapus banner."); } 
+            finally { hideLoading(); }
         }
 
         function requestNotificationPermission() {
             if (!('Notification' in window)) return;
             if (Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') showToast('Notifikasi pesanan baru diaktifkan!');
-                });
+                Notification.requestPermission().then(permission => { if (permission === 'granted') showToast('Notifikasi pesanan baru diaktifkan!'); });
             }
         }
+
         function showOrderNotification(orderData) {
             if (!('Notification' in window)) return;
             if (Notification.permission === 'granted') {
@@ -696,16 +781,11 @@
                     icon: 'Logo_WH_intuls-removebg-preview.png',
                     badge: 'Logo_WH_intuls-removebg-preview.png',
                     tag: 'new-order-' + Date.now(),
-                    data: {
-                        orderId: orderId,
-                        url: './index.html?orderId=' + orderId
-                    }
+                    data: { orderId: orderId, url: './index.html?orderId=' + orderId }
                 };
                 try {
                     if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.ready.then(registration => {
-                            registration.showNotification('🔔 Pesanan Baru RANEL CELL!', options);
-                        });
+                        navigator.serviceWorker.ready.then(registration => { registration.showNotification('🔔 Pesanan Baru RANEL CELL!', options); });
                     } else {
                         const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', options);
                         notif.onclick = () => { window.focus(); notif.close(); };
@@ -722,23 +802,17 @@
             setTimeout(() => t.remove(), 3000);
         }
 
-        // Tangkap pesan dari Service Worker (saat notifikasi diklik saat aplikasi dibuka)
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'OPEN_ORDER_DETAIL') {
                 const orderId = String(event.data.orderId || '');
                 if (orderId) {
                     switchTab('orders');
                     const orderObj = allOrders.find(o => o.id === orderId);
-                    if (orderObj) {
-                        openEditModal(orderId);
-                    } else {
-                        pendingOrderId = orderId; 
-                    }
+                    if (orderObj) openEditModal(orderId);
+                    else pendingOrderId = orderId; 
                 }
             }
         });
-
-        
     </script>
 </body>
 </html>
