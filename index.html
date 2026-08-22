@@ -721,32 +721,37 @@
         function closeEditBannerModal() { document.getElementById('edit-banner-modal').classList.add('hidden'); }
 
         async function saveBannerChange() {
-            const id = document.getElementById('banner-doc-id').value;
-            const data = {
-                imageUrl: document.getElementById('banner-imageUrl').value,
-                title: document.getElementById('banner-title').value,
-                periode: document.getElementById('banner-periode').value,
-                hadiah: document.getElementById('banner-hadiah').value,
-                pengumuman: document.getElementById('banner-pengumuman').value,
-                caraIkut: document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== ''),
-                active: document.getElementById('banner-active').checked
-            };
-            if (!data.imageUrl) { alert("URL Gambar wajib diisi!"); return; }
-            showLoading();
-            try {
-                const { db, doc, setDoc, collection } = window.firebaseAdmin;
-                if (!id) {
-                    const newDocRef = doc(collection(db, "banners"));
-                    await setDoc(newDocRef, data);
-                    showToast("Banner berhasil ditambahkan!");
-                } else {
-                    await setDoc(doc(db, "banners", id), data, { merge: true });
-                    showToast("Banner berhasil diperbarui!");
-                }
-                closeEditBannerModal();
-            } catch (err) { alert("Gagal menyimpan banner."); console.error(err); } 
-            finally { hideLoading(); }
+    const id = document.getElementById('banner-doc-id').value;
+    const data = {
+        imageUrl: document.getElementById('banner-imageUrl').value,
+        title: document.getElementById('banner-title').value,
+        periode: document.getElementById('banner-periode').value,
+        hadiah: document.getElementById('banner-hadiah').value,
+        pengumuman: document.getElementById('banner-pengumuman').value,
+        caraIkut: document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== ''),
+        active: document.getElementById('banner-active').checked
+    };
+    if (!data.imageUrl) { alert("URL Gambar wajib diisi!"); return; }
+    showLoading();
+    try {
+        const { db, doc, setDoc, collection, updateDoc } = window.firebaseAdmin;
+        if (!id) {
+            // Jika banner baru, gunakan setDoc
+            const newDocRef = doc(collection(db, "banners"));
+            await setDoc(newDocRef, data);
+            showToast("Banner berhasil ditambahkan!");
+        } else {
+            // Jika edit banner, gunakan updateDoc agar semua field tertimpa pasti
+            await updateDoc(doc(db, "banners", id), data);
+            showToast("Banner berhasil diperbarui!");
         }
+        closeEditBannerModal();
+    } catch (err) { 
+        alert("Gagal menyimpan banner."); console.error(err); 
+    } finally { 
+        hideLoading(); 
+    }
+}
 
         async function deleteBanner() {
             const id = document.getElementById('banner-doc-id').value;
