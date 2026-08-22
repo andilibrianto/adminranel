@@ -368,6 +368,49 @@
         let allBanners = [];
 
         function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
+        // --- AUTO REFRESH PWA ADMIN SETIAP 25 MENIT DI BACKGROUND ---
+const AUTO_REFRESH_INTERVAL = 25 * 60 * 1000; // 25 menit dalam milidetik
+let hiddenTime = null;
+let lastCheckTime = Date.now();
+
+// 1. Deteksi saat PWA masuk/keluar dari background
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        // Catat waktu saat PWA Admin masuk ke background
+        hiddenTime = Date.now();
+    } else if (document.visibilityState === 'visible') {
+        // Saat user kembali membuka PWA Admin
+        if (hiddenTime !== null) {
+            const timeAway = Date.now() - hiddenTime;
+            // Jika PWA berada di background lebih dari 25 menit, langsung refresh
+            if (timeAway >= AUTO_REFRESH_INTERVAL) {
+                console.log('PWA Admin kembali setelah 25 menit, merefresh data...');
+                window.location.reload();
+            }
+            hiddenTime = null; // Reset timer
+        }
+        lastCheckTime = Date.now(); // Reset timer interval
+    }
+});
+
+// 2. Fungsi cadangan: Paksa refresh tepat di detik ke-25 menit 
+// (Berjalan di browser yang mengizinkan eksekusi background, seperti Desktop)
+setInterval(() => {
+    // Jangan refresh jika user sedang melihat/mengetik di form agar tidak mengganggu
+    const isEditing = !document.getElementById('edit-banner-modal').classList.contains('hidden') || 
+                       !document.getElementById('edit-modal').classList.contains('hidden');
+    
+    if (!isEditing && document.visibilityState === 'hidden') {
+        const timeSinceLastCheck = Date.now() - lastCheckTime;
+        if (timeSinceLastCheck >= AUTO_REFRESH_INTERVAL) {
+            console.log('Otomatis refresh di background (Interval 25 menit tercapai)');
+            window.location.reload();
+        }
+    } else {
+        // Reset timer jika user sedang aktif di foreground
+        lastCheckTime = Date.now();
+    }
+}, 60000); // Cek status setiap 1 menit
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
         window.addEventListener('firebase-admin-ready', function() {
