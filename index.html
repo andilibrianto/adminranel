@@ -320,6 +320,11 @@
             <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART atau Pengumuman Libur">
         </div>
         
+        <div class="mb-4">
+            <label class="text-xs text-gray-500 mb-1 block">Urutan Tampil (Isi dengan Angka)</label>
+            <input type="number" id="banner-order" class="form-input" placeholder="Contoh: 1, 2, 3..." value="1">
+        </div>
+        
         <!-- FIELD KHUSUS INFORMASI (Default: Hidden) -->
         <div id="info-only-fields" class="mb-4 hidden">
             <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
@@ -786,6 +791,7 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-type').value = b.data.type || 'promo';
         document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
         document.getElementById('banner-title').value = b.data.title || '';
+        document.getElementById('banner-order').value = b.data.order || 1; // <--- TAMBAHKAN INI
         document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
         document.getElementById('banner-periode').value = b.data.periode || '';
         document.getElementById('banner-hadiah').value = b.data.hadiah || '';
@@ -797,7 +803,8 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-doc-id').value = '';
         document.getElementById('banner-type').value = 'promo';
         document.getElementById('banner-imageUrl').value = '';
-        document.getElementById('banner-title').value = '';
+        document.getElementById('banner-title').value = b.data.title || '';
+        document.getElementById('banner-order').value = b.data.order || 1; // <--- TAMBAHKAN INI
         document.getElementById('banner-isiPesan').value = '';
         document.getElementById('banner-periode').value = '';
         document.getElementById('banner-hadiah').value = '';
@@ -818,10 +825,11 @@ async function saveBannerChange() {
     const type = document.getElementById('banner-type').value;
     
     // Data dasar yang sama untuk keduanya
-    const data = {
+        const data = {
         type: type,
         imageUrl: document.getElementById('banner-imageUrl').value,
         title: document.getElementById('banner-title').value,
+        order: parseInt(document.getElementById('banner-order').value) || 1, // <--- TAMBAHKAN INI
         active: document.getElementById('banner-active').checked
     };
 
