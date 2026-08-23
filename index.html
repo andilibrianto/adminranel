@@ -368,49 +368,65 @@
         let allBanners = [];
 
         function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
-        // --- AUTO REFRESH PWA ADMIN SETIAP 25 MENIT DI BACKGROUND ---
-const AUTO_REFRESH_INTERVAL = 2 * 60 * 1000; // 25 menit dalam milidetik
-let hiddenTime = null;
-let lastCheckTime = Date.now();
+        // --- AUTO REFRESH PWA ADMIN ---
+const MOBILE_BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit untuk Mobile di background
+const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000;       // 2 menit untuk Desktop diam (idle)
 
-// 1. Deteksi saat PWA masuk/keluar dari background
+// Deteksi perangkat (Mobile dikecualikan dari aturan idle 2 menit)
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+let hiddenTime = null;
+let lastInteractionTime = Date.now();
+
+// 1. Catat setiap kali Admin menggerakkan mouse, mengetik, atau mengklik di Desktop
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(eventName => {
+    document.addEventListener(eventName, () => {
+        lastInteractionTime = Date.now();
+    }, { passive: true });
+});
+
+// 2. Deteksi saat PWA Admin di-minimize (Khusus Mobile & Desktop Background)
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
-        // Catat waktu saat PWA Admin masuk ke background
         hiddenTime = Date.now();
     } else if (document.visibilityState === 'visible') {
-        // Saat user kembali membuka PWA Admin
         if (hiddenTime !== null) {
             const timeAway = Date.now() - hiddenTime;
-            // Jika PWA berada di background lebih dari 25 menit, langsung refresh
-            if (timeAway >= AUTO_REFRESH_INTERVAL) {
-                console.log('PWA Admin kembali setelah 25 menit, merefresh data...');
+            // Jika di minimize lebih dari batas waktu, refresh saat dibuka kembali
+            const limit = isMobile ? MOBILE_BACKGROUND_LIMIT : DESKTOP_IDLE_LIMIT;
+            if (timeAway >= limit) {
+                console.log('Kembali dari minimize, merefresh data...');
                 window.location.reload();
             }
-            hiddenTime = null; // Reset timer
+            hiddenTime = null;
         }
-        lastCheckTime = Date.now(); // Reset timer interval
+        lastInteractionTime = Date.now(); // Reset timer idle
     }
 });
 
-// 2. Fungsi cadangan: Paksa refresh tepat di detik ke-25 menit 
-// (Berjalan di browser yang mengizinkan eksekusi background, seperti Desktop)
+// 3. Fungsi Khusus Desktop: Cek idle (Admin menatap layar tanpa sentuh mouse/keyboard)
 setInterval(() => {
-    // Jangan refresh jika user sedang melihat/mengetik di form agar tidak mengganggu
+    if (isMobile) return; // <-- Hanya berjalan di Desktop
+
+    // Jangan refresh jika Admin sedang membuka form Edit
     const isEditing = !document.getElementById('edit-banner-modal').classList.contains('hidden') || 
                        !document.getElementById('edit-modal').classList.contains('hidden');
     
-    if (!isEditing && document.visibilityState === 'hidden') {
-        const timeSinceLastCheck = Date.now() - lastCheckTime;
-        if (timeSinceLastCheck >= AUTO_REFRESH_INTERVAL) {
-            console.log('Otomatis refresh di background (Interval 25 menit tercapai)');
-            window.location.reload();
-        }
-    } else {
-        // Reset timer jika user sedang aktif di foreground
-        lastCheckTime = Date.now();
+    if (isEditing) {
+        // Jika sedang mengedit form, anggap Admin sedang aktif agar data tidak hilang
+        lastInteractionTime = Date.now();
+        return;
     }
-}, 60000); // Cek status setiap 1 menit
+
+    // Cek berapa lama Admin tidak menggerakkan mouse/mengetik
+    const idleTime = Date.now() - lastInteractionTime;
+
+    // Jika diam (idle) lebih dari 2 menit, langsung refresh
+    if (idleTime >= DESKTOP_IDLE_LIMIT) {
+        console.log('Desktop idle 2 menit tercapai, merefresh data transaksi...');
+        window.location.reload();
+    }
+}, 5000); // Cek status idle setiap 5 detik
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
         window.addEventListener('firebase-admin-ready', function() {
