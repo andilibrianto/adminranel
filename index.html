@@ -369,8 +369,8 @@
 
         function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
         // --- AUTO REFRESH PWA ADMIN ---
-const MOBILE_BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit untuk Mobile di background
-const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000;       // 2 menit untuk Desktop diam (idle)
+const BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit (Berlaku untuk semua perangkat saat berpindah aplikasi)
+const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000; // 2 menit (Khusus Desktop saat diam menatap layar)
 
 // Deteksi perangkat (Mobile dikecualikan dari aturan idle 2 menit)
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -378,24 +378,23 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 let hiddenTime = null;
 let lastInteractionTime = Date.now();
 
-// 1. Catat setiap kali Admin menggerakkan mouse, mengetik, atau mengklik di Desktop
+// 1. Catat setiap kali Admin menggerakkan mouse, mengetik, atau mengklik
 ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(eventName => {
     document.addEventListener(eventName, () => {
         lastInteractionTime = Date.now();
     }, { passive: true });
 });
 
-// 2. Deteksi saat PWA Admin di-minimize (Khusus Mobile & Desktop Background)
+// 2. Deteksi saat PWA Admin di-minimize / berpindah aplikasi
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
         hiddenTime = Date.now();
     } else if (document.visibilityState === 'visible') {
         if (hiddenTime !== null) {
             const timeAway = Date.now() - hiddenTime;
-            // Jika di minimize lebih dari batas waktu, refresh saat dibuka kembali
-            const limit = isMobile ? MOBILE_BACKGROUND_LIMIT : DESKTOP_IDLE_LIMIT;
-            if (timeAway >= limit) {
-                console.log('Kembali dari minimize, merefresh data...');
+            // Jika di-minimize lebih dari 25 menit, refresh saat dibuka kembali (Berlaku untuk Desktop & Mobile)
+            if (timeAway >= BACKGROUND_LIMIT) {
+                console.log('Kembali dari minimize (25 menit), merefresh data...');
                 window.location.reload();
             }
             hiddenTime = null;
