@@ -750,7 +750,7 @@ setInterval(() => {
             });
         }
 
-        function renderBanners() {
+                function renderBanners() {
             const listEl = document.getElementById('banners-list');
             
             // Urutkan daftar di Admin agar sesuai dengan urutan tampil di Pelanggan
@@ -764,18 +764,35 @@ setInterval(() => {
                 listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner. Klik "Tambah Banner" untuk membuat baru.</p>';
                 return;
             }
-            listEl.innerHTML = allBanners.map(b => `
-                <div class="card p-3 flex flex-col gap-2">
-                    <img src="${b.data.imageUrl || ''}" class="w-full h-32 object-cover rounded-lg bg-dk-700">
-                    <div class="flex-1">
-                        <h3 class="font-bold text-sm">${b.data.title || 'Tanpa Judul'}</h3>
-                        <p class="text-xs ${b.data.active ? 'text-green-400' : 'text-gray-500'}">${b.data.active ? 'Aktif' : 'Nonaktif'}</p>
+            listEl.innerHTML = allBanners.map(b => {
+                // Ambil angka urutan, jika kosong default 1. Format jadi 2 digit (01, 02, dst)
+                const orderNum = b.data.order || 1;
+                const orderStr = String(orderNum).padStart(2, '0');
+                const isActive = b.data.active;
+                const typeText = b.data.type === 'info' ? 'Informasi' : 'Promosi';
+                
+                return `
+                    <div class="card p-3 flex flex-col gap-2 relative">
+                        <div class="relative">
+                            <img src="${b.data.imageUrl || ''}" class="w-full h-32 object-cover rounded-lg bg-dk-700">
+                            <div class="absolute top-2 left-2 flex gap-1">
+                                <span class="bg-pk text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">${orderStr}</span>
+                                ${isActive ? 
+                                    `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Aktif</span>` : 
+                                    `<span class="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Nonaktif</span>`
+                                }
+                            </div>
+                        </div>
+                        <div class="flex-1 mt-1">
+                            <h3 class="font-bold text-sm">${b.data.title || 'Tanpa Judul'}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">${typeText}</p>
+                        </div>
+                        <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5">
+                            <i class="fa-solid fa-pen mr-1"></i> Edit
+                        </button>
                     </div>
-                    <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5">
-                        <i class="fa-solid fa-pen mr-1"></i> Edit
-                    </button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Fungsi untuk menampilkan/menyembunyikan field berdasarkan jenis konten
