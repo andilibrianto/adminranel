@@ -752,6 +752,14 @@ setInterval(() => {
 
         function renderBanners() {
             const listEl = document.getElementById('banners-list');
+            
+            // Urutkan daftar di Admin agar sesuai dengan urutan tampil di Pelanggan
+            allBanners.sort((a, b) => {
+                const orderA = a.data.order || 999;
+                const orderB = b.data.order || 999;
+                return orderA - orderB;
+            });
+
             if (allBanners.length === 0) {
                 listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner. Klik "Tambah Banner" untuk membuat baru.</p>';
                 return;
