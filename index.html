@@ -816,7 +816,7 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-type').value = b.data.type || 'promo';
         document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
         document.getElementById('banner-title').value = b.data.title || '';
-        document.getElementById('banner-order').value = b.data.order || 1; // <--- TAMBAHKAN INI
+        document.getElementById('banner-order').value = b.data.order || 1;
         document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
         document.getElementById('banner-periode').value = b.data.periode || '';
         document.getElementById('banner-hadiah').value = b.data.hadiah || '';
@@ -825,11 +825,12 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-active').checked = b.data.active || false;
         deleteBtn.classList.remove('hidden');
     } else {
+        // INI BAGIAN ELSE (UNTUK TAMBAH BANNER BARU)
         document.getElementById('banner-doc-id').value = '';
         document.getElementById('banner-type').value = 'promo';
         document.getElementById('banner-imageUrl').value = '';
-        document.getElementById('banner-title').value = b.data.title || '';
-        document.getElementById('banner-order').value = b.data.order || 1; // <--- TAMBAHKAN INI
+        document.getElementById('banner-title').value = ''; // <--- PERBAIKAN: Hapus b.data
+        document.getElementById('banner-order').value = 1; // <--- PERBAIKAN: Hapus b.data
         document.getElementById('banner-isiPesan').value = '';
         document.getElementById('banner-periode').value = '';
         document.getElementById('banner-hadiah').value = '';
