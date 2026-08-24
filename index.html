@@ -334,7 +334,7 @@
             <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART atau Pengumuman Libur">
         </div>
         
-        <div class="mb-4">
+        <div id="schedule-wrapper" class="mb-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="text-xs text-gray-500 mb-1 block">Jadwal Mulai (Opsional)</label>
@@ -1007,6 +1007,24 @@ function openEditBannerModal(id = null) {
         fillScheduleInputs(b.data.scheduleStartTime, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
         fillScheduleInputs(b.data.scheduleEndTime, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
 
+        // --- TAMBAHKAN INI: Sembunyikan Jadwal jika Banner sudah Live/Aktif ---
+        const scheduleWrapper = document.getElementById('schedule-wrapper');
+        const now = new Date();
+        let isLive = false;
+        
+        if (b.data.scheduleStartTime) {
+            const start = new Date(b.data.scheduleStartTime);
+            if (start <= now) {
+                isLive = true; // Jika waktu mulai sudah lewat, berarti sudah live
+            }
+        }
+        
+        if (isLive) {
+            scheduleWrapper.classList.add('hidden'); // Sembunyikan field jadwal
+        } else {
+            scheduleWrapper.classList.remove('hidden'); // Tampilkan field jadwal jika masih terjadwal/belum live
+        }
+
         document.getElementById('banner-label-periode').value = b.data.labelPeriode || 'Periode';
         document.getElementById('banner-periode').value = b.data.periode || '';
         document.getElementById('banner-label-hadiah').value = b.data.labelHadiah || 'Total Hadiah / Keuntungan';
@@ -1028,6 +1046,9 @@ function openEditBannerModal(id = null) {
         
         fillScheduleInputs(null, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
         fillScheduleInputs(null, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
+        
+        // Pastikan field jadwal terlihat saat membuat banner baru
+        document.getElementById('schedule-wrapper').classList.remove('hidden');
         
         document.getElementById('banner-label-periode').value = 'Periode';
         document.getElementById('banner-periode').value = '';
