@@ -789,8 +789,15 @@ setInterval(() => {
             });
         }
 
-                        function renderBanners() {
+                function renderBanners() {
             const listEl = document.getElementById('banners-list');
+
+            // Urutkan array berdasarkan 'order' agar selalu sinkron
+            allBanners.sort((a, b) => {
+                const orderA = a.data.order || 999;
+                const orderB = b.data.order || 999;
+                return orderA - orderB;
+            });
 
             if (allBanners.length === 0) {
                 listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner. Klik "Tambah Banner" untuk membuat baru.</p>';
@@ -798,7 +805,6 @@ setInterval(() => {
             }
 
             listEl.innerHTML = allBanners.map((b, index) => {
-                // Nomor urut otomatis diambil dari posisi array (index + 1)
                 const orderNum = index + 1;
                 const orderStr = String(orderNum).padStart(2, '0');
                 const isActive = b.data.active;
@@ -847,11 +853,20 @@ setInterval(() => {
             const listEl = document.getElementById('banners-list');
             const newOrderIds = Array.from(listEl.children).map(child => child.dataset.id);
             
-            // Update array lokal agar nomor (01, 02) langsung berubah di layar
-            allBanners.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
-            renderBanners(); // Render ulang untuk update angka badge di layar Admin
+            // 1. Update data 'order' di memori lokal (JavaScript) SECARA LANGSUNG
+            // Ini mencegah onSnapshot mereset tampilan saat data server belum berubah
+            for (let i = 0; i < newOrderIds.length; i++) {
+                const id = newOrderIds[i];
+                const bannerObj = allBanners.find(b => b.id === id);
+                if (bannerObj) {
+                    bannerObj.data.order = i + 1; // Set urutan baru (1, 2, 3...)
+                }
+            }
             
-            // Simpan urutan baru ke Firestore menggunakan Batch Write (Simpan Sekaligus)
+            // 2. Render ulang tampilan menggunakan data lokal yang baru diupdate
+            renderBanners();
+            
+            // 3. Simpan urutan baru ke Firestore menggunakan Batch Write
             try {
                 const { db, doc, writeBatch } = window.firebaseAdmin;
                 const batch = writeBatch(db);
@@ -862,7 +877,6 @@ setInterval(() => {
                     batch.update(bannerRef, { order: i + 1 });
                 }
                 
-                // Commit batch: Semua data langsung tersimpan dalam 1 milidetik
                 await batch.commit();
                 showToast("Urutan banner berhasil diperbarui!");
             } catch (err) {
