@@ -862,7 +862,7 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-type').value = 'promo';
         document.getElementById('banner-imageUrl').value = '';
         document.getElementById('banner-title').value = ''; // <--- PERBAIKAN: Hapus b.data
-        document.getElementById('banner-order').value = b.data.order || 1;
+        document.getElementById('banner-order').value = '';
         if (b.data.scheduleTime) {
             const dt = new Date(b.data.scheduleTime);
             const yyyy = dt.getFullYear();
