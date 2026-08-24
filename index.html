@@ -863,19 +863,8 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-imageUrl').value = '';
         document.getElementById('banner-title').value = ''; // <--- PERBAIKAN: Hapus b.data
         document.getElementById('banner-order').value = 1;
-        if (b.data.scheduleTime) {
-            const dt = new Date(b.data.scheduleTime);
-            const yyyy = dt.getFullYear();
-            const mm = String(dt.getMonth() + 1).padStart(2, '0');
-            const dd = String(dt.getDate()).padStart(2, '0');
-            const hh = String(dt.getHours()).padStart(2, '0');
-            const min = String(dt.getMinutes()).padStart(2, '0');
-            document.getElementById('banner-scheduleDate').value = `${yyyy}-${mm}-${dd}`;
-            document.getElementById('banner-scheduleTime').value = `${hh}:${min}`;
-        } else {
             document.getElementById('banner-scheduleDate').value = '';
             document.getElementById('banner-scheduleTime').value = '';
-        }
         document.getElementById('banner-isiPesan').value = '';
         document.getElementById('banner-periode').value = '';
         document.getElementById('banner-hadiah').value = '';
