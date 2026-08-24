@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="ADMIN RANEL">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
         import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js';
@@ -331,11 +332,6 @@
         <div class="mb-4">
             <label class="text-xs text-gray-500 mb-1 block">Judul Promo / Informasi</label>
             <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART atau Pengumuman Libur">
-        </div>
-        
-        <div class="mb-4">
-            <label class="text-xs text-gray-500 mb-1 block">Urutan Tampil (Isi dengan Angka)</label>
-            <input type="number" id="banner-order" class="form-input" placeholder="Contoh: 1, 2, 3..." value="1">
         </div>
         
         <div class="mb-4">
@@ -793,29 +789,23 @@ setInterval(() => {
             });
         }
 
-                function renderBanners() {
+                        function renderBanners() {
             const listEl = document.getElementById('banners-list');
-            
-            // Urutkan daftar di Admin agar sesuai dengan urutan tampil di Pelanggan
-            allBanners.sort((a, b) => {
-                const orderA = a.data.order || 999;
-                const orderB = b.data.order || 999;
-                return orderA - orderB;
-            });
 
             if (allBanners.length === 0) {
                 listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner. Klik "Tambah Banner" untuk membuat baru.</p>';
                 return;
             }
-            listEl.innerHTML = allBanners.map(b => {
-                // Ambil angka urutan, jika kosong default 1. Format jadi 2 digit (01, 02, dst)
-                const orderNum = b.data.order || 1;
+
+            listEl.innerHTML = allBanners.map((b, index) => {
+                // Nomor urut otomatis diambil dari posisi array (index + 1)
+                const orderNum = index + 1;
                 const orderStr = String(orderNum).padStart(2, '0');
                 const isActive = b.data.active;
                 const typeText = b.data.type === 'info' ? 'Informasi' : 'Promosi';
                 
                 return `
-                    <div class="card p-3 flex flex-col gap-2 relative">
+                    <div class="card p-3 flex flex-col gap-2 relative" data-id="${b.id}">
                         <div class="relative">
                             <img src="${b.data.imageUrl || ''}" class="w-full h-32 object-cover rounded-lg bg-dk-700">
                             <div class="absolute top-2 left-2 flex gap-1">
@@ -824,6 +814,9 @@ setInterval(() => {
                                     `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Aktif</span>` : 
                                     `<span class="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Nonaktif</span>`
                                 }
+                            </div>
+                            <div class="absolute top-2 right-2 bg-black/50 text-white text-[10px] font-bold p-1 rounded-md cursor-grab">
+                                <i class="fa-solid fa-grip-vertical"></i>
                             </div>
                         </div>
                         <div class="flex-1 mt-1">
@@ -836,6 +829,40 @@ setInterval(() => {
                     </div>
                 `;
             }).join('');
+
+            // Inisialisasi Drag and Drop
+            if (window.Sortable) {
+                Sortable.create(listEl, {
+                    animation: 150,
+                    ghostClass: 'opacity-30',
+                    onEnd: function (evt) {
+                        updateBannerOrder();
+                    }
+                });
+            }
+        }
+
+        // Fungsi baru untuk menyimpan urutan hasil drag and drop ke Firestore
+        async function updateBannerOrder() {
+            const listEl = document.getElementById('banners-list');
+            const newOrderIds = Array.from(listEl.children).map(child => child.dataset.id);
+            
+            // Update array lokal agar nomor (01, 02) langsung berubah di layar
+            allBanners.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
+            renderBanners(); // Render ulang untuk update angka badge
+            
+            // Simpan urutan baru ke Firestore
+            try {
+                const { db, doc, updateDoc } = window.firebaseAdmin;
+                for (let i = 0; i < newOrderIds.length; i++) {
+                    const id = newOrderIds[i];
+                    await updateDoc(doc(db, "banners", id), { order: i + 1 });
+                }
+                showToast("Urutan banner berhasil diperbarui!");
+            } catch (err) {
+                console.error("Gagal menyimpan urutan:", err);
+                alert("Terjadi kesalahan saat menyimpan urutan.");
+            }
         }
 
         // Fungsi untuk menampilkan/menyembunyikan field berdasarkan jenis konten
@@ -860,7 +887,6 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-type').value = b.data.type || 'promo';
         document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
         document.getElementById('banner-title').value = b.data.title || '';
-        document.getElementById('banner-order').value = b.data.order || 1;
         
         if (b.data.scheduleTime) {
             const dt = new Date(b.data.scheduleTime);
@@ -895,7 +921,6 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-type').value = 'promo';
         document.getElementById('banner-imageUrl').value = '';
         document.getElementById('banner-title').value = '';
-        document.getElementById('banner-order').value = 1;
         document.getElementById('banner-scheduleDate').value = '';
         document.getElementById('banner-scheduleTime').value = '';
         
@@ -1002,7 +1027,6 @@ async function saveBannerChange() {
         type: type,
         imageUrl: document.getElementById('banner-imageUrl').value,
         title: document.getElementById('banner-title').value,
-        order: parseInt(document.getElementById('banner-order').value) || 1,
         scheduleTime: scheduleISO,
         active: document.getElementById('banner-active').checked
     };
