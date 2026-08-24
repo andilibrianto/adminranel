@@ -325,6 +325,15 @@
             <input type="number" id="banner-order" class="form-input" placeholder="Contoh: 1, 2, 3..." value="1">
         </div>
         
+        <div class="mb-4">
+            <label class="text-xs text-gray-500 mb-1 block">Jadwal Tampil (Opsional)</label>
+            <div class="flex gap-2">
+                <input type="date" id="banner-scheduleDate" class="form-input flex-1">
+                <input type="time" id="banner-scheduleTime" class="form-input w-1/2">
+            </div>
+            <p class="text-[10px] text-gray-500 mt-1">Kosongkan jika ingin langsung tayang sekarang.</p>
+        </div>
+        
         <!-- FIELD KHUSUS INFORMASI (Default: Hidden) -->
         <div id="info-only-fields" class="mb-4 hidden">
             <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
@@ -817,6 +826,19 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
         document.getElementById('banner-title').value = b.data.title || '';
         document.getElementById('banner-order').value = b.data.order || 1;
+        if (b.data.scheduleTime) {
+            const dt = new Date(b.data.scheduleTime);
+            const yyyy = dt.getFullYear();
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const dd = String(dt.getDate()).padStart(2, '0');
+            const hh = String(dt.getHours()).padStart(2, '0');
+            const min = String(dt.getMinutes()).padStart(2, '0');
+            document.getElementById('banner-scheduleDate').value = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('banner-scheduleTime').value = `${hh}:${min}`;
+        } else {
+            document.getElementById('banner-scheduleDate').value = '';
+            document.getElementById('banner-scheduleTime').value = '';
+        }
         document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
         document.getElementById('banner-periode').value = b.data.periode || '';
         document.getElementById('banner-hadiah').value = b.data.hadiah || '';
@@ -830,7 +852,20 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-type').value = 'promo';
         document.getElementById('banner-imageUrl').value = '';
         document.getElementById('banner-title').value = ''; // <--- PERBAIKAN: Hapus b.data
-        document.getElementById('banner-order').value = 1; // <--- PERBAIKAN: Hapus b.data
+        document.getElementById('banner-order').value = b.data.order || 1;
+        if (b.data.scheduleTime) {
+            const dt = new Date(b.data.scheduleTime);
+            const yyyy = dt.getFullYear();
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const dd = String(dt.getDate()).padStart(2, '0');
+            const hh = String(dt.getHours()).padStart(2, '0');
+            const min = String(dt.getMinutes()).padStart(2, '0');
+            document.getElementById('banner-scheduleDate').value = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('banner-scheduleTime').value = `${hh}:${min}`;
+        } else {
+            document.getElementById('banner-scheduleDate').value = '';
+            document.getElementById('banner-scheduleTime').value = '';
+        }
         document.getElementById('banner-isiPesan').value = '';
         document.getElementById('banner-periode').value = '';
         document.getElementById('banner-hadiah').value = '';
@@ -849,13 +884,20 @@ function closeEditBannerModal() {
 async function saveBannerChange() {
     const id = document.getElementById('banner-doc-id').value;
     const type = document.getElementById('banner-type').value;
-    
-    // Data dasar yang sama untuk keduanya
-        const data = {
+    const scheduleDate = document.getElementById('banner-scheduleDate').value;
+    const scheduleTime = document.getElementById('banner-scheduleTime').value;
+    let scheduleISO = null;
+    if (scheduleDate && scheduleTime) {
+        // Gabungkan tanggal & jam, ubah ke ISO String standar
+        scheduleISO = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+    }
+
+    const data = {
         type: type,
         imageUrl: document.getElementById('banner-imageUrl').value,
         title: document.getElementById('banner-title').value,
-        order: parseInt(document.getElementById('banner-order').value) || 1, // <--- TAMBAHKAN INI
+        order: parseInt(document.getElementById('banner-order').value) || 1,
+        scheduleTime: scheduleISO, // <--- TAMBAHKAN INI
         active: document.getElementById('banner-active').checked
     };
 
