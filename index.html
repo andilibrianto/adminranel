@@ -804,12 +804,27 @@ setInterval(() => {
                 return;
             }
 
+            // Deteksi perangkat Mobile
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
             listEl.innerHTML = allBanners.map((b, index) => {
                 const orderNum = index + 1;
                 const orderStr = String(orderNum).padStart(2, '0');
                 const isActive = b.data.active;
                 const typeText = b.data.type === 'info' ? 'Informasi' : 'Promosi';
                 
+                // Tombol Panah (Khusus Mobile) untuk Naik/Turun
+                const mobileOrderBtns = `
+                    <div class="flex gap-1 md:hidden">
+                        <button onclick="moveBanner('${b.id}', -1)" ${index === 0 ? 'disabled' : ''} class="bg-dk-600 text-white text-xs px-2 py-1 rounded-md ${index === 0 ? 'opacity-30' : 'hover:bg-pk'}">
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                        <button onclick="moveBanner('${b.id}', 1)" ${index === allBanners.length - 1 ? 'disabled' : ''} class="bg-dk-600 text-white text-xs px-2 py-1 rounded-md ${index === allBanners.length - 1 ? 'opacity-30' : 'hover:bg-pk'}">
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                    </div>
+                `;
+
                 return `
                     <div class="card p-3 flex flex-col gap-2 relative" data-id="${b.id}">
                         <div class="relative">
@@ -821,7 +836,8 @@ setInterval(() => {
                                     `<span class="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Nonaktif</span>`
                                 }
                             </div>
-                            <div class="absolute top-2 right-2 bg-black/50 text-white text-[10px] font-bold p-1 rounded-md cursor-grab">
+                            <!-- Ikon Grip hanya muncul di Desktop -->
+                            <div class="absolute top-2 right-2 bg-black/50 text-white text-[10px] font-bold p-1 rounded-md cursor-grab hidden md:block">
                                 <i class="fa-solid fa-grip-vertical"></i>
                             </div>
                         </div>
@@ -829,15 +845,18 @@ setInterval(() => {
                             <h3 class="font-bold text-sm">${b.data.title || 'Tanpa Judul'}</h3>
                             <p class="text-xs text-gray-500 mt-0.5">${typeText}</p>
                         </div>
-                        <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5">
-                            <i class="fa-solid fa-pen mr-1"></i> Edit
-                        </button>
+                        <div class="flex justify-between items-center mt-1">
+                            <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5 flex-1 mr-2">
+                                <i class="fa-solid fa-pen mr-1"></i> Edit
+                            </button>
+                            ${mobileOrderBtns}
+                        </div>
                     </div>
                 `;
             }).join('');
 
-            // Inisialisasi Drag and Drop
-            if (window.Sortable) {
+            // Inisialisasi Drag and Drop (HANYA untuk Desktop)
+            if (window.Sortable && !isMobile) {
                 Sortable.create(listEl, {
                     animation: 150,
                     ghostClass: 'opacity-30',
@@ -845,6 +864,42 @@ setInterval(() => {
                         updateBannerOrder();
                     }
                 });
+            }
+        }
+
+        // Fungsi baru khusus Mobile untuk pindah posisi banner
+        async function moveBanner(id, direction) {
+            const currentIndex = allBanners.findIndex(b => b.id === id);
+            const targetIndex = currentIndex + direction;
+            
+            if (targetIndex < 0 || targetIndex >= allBanners.length) return;
+
+            // Tukar posisi di array lokal
+            const temp = allBanners[currentIndex];
+            allBanners[currentIndex] = allBanners[targetIndex];
+            allBanners[targetIndex] = temp;
+
+            // Update nomor urut di memori lokal
+            allBanners.forEach((b, i) => {
+                b.data.order = i + 1;
+            });
+
+            renderBanners(); // Render ulang
+
+            // Simpan ke Firestore
+            try {
+                const { db, doc, writeBatch } = window.firebaseAdmin;
+                const batch = writeBatch(db);
+                
+                allBanners.forEach((b) => {
+                    const bannerRef = doc(db, "banners", b.id);
+                    batch.update(bannerRef, { order: b.data.order });
+                });
+                
+                await batch.commit();
+                showToast("Urutan banner berhasil diperbarui!");
+            } catch (err) {
+                console.error("Gagal menyimpan urutan:", err);
             }
         }
 
