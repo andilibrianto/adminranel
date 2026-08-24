@@ -383,8 +383,8 @@
 
         function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
         // --- AUTO REFRESH PWA ADMIN ---
-const BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit (Berlaku untuk semua perangkat saat berpindah aplikasi)
-const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000; // 2 menit (Khusus Desktop saat diam menatap layar)
+const BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit (Berpindah aplikasi di HP/Desktop)
+const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000; // 2 menit (Diam menatap layar di Desktop)
 
 // Deteksi perangkat (Mobile dikecualikan dari aturan idle 2 menit)
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -399,25 +399,37 @@ let lastInteractionTime = Date.now();
     }, { passive: true });
 });
 
-// 2. Deteksi saat PWA Admin di-minimize / berpindah aplikasi
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
+// 2. Fungsi untuk mencatat waktu saat aplikasi kehilangan fokus
+function handleAppHide() {
+    if (hiddenTime === null) {
         hiddenTime = Date.now();
-    } else if (document.visibilityState === 'visible') {
-        if (hiddenTime !== null) {
-            const timeAway = Date.now() - hiddenTime;
-            // Jika di-minimize lebih dari 25 menit, refresh saat dibuka kembali (Berlaku untuk Desktop & Mobile)
-            if (timeAway >= BACKGROUND_LIMIT) {
-                console.log('Kembali dari minimize (25 menit), merefresh data...');
-                window.location.reload();
-            }
-            hiddenTime = null;
-        }
-        lastInteractionTime = Date.now(); // Reset timer idle
     }
+}
+
+// 3. Fungsi untuk mengecek waktu saat aplikasi kembali aktif
+function handleAppShow() {
+    if (hiddenTime !== null) {
+        const timeAway = Date.now() - hiddenTime;
+        if (timeAway >= BACKGROUND_LIMIT) {
+            console.log('Kembali dari background (25 menit), merefresh data...');
+            window.location.reload();
+        }
+        hiddenTime = null;
+    }
+    lastInteractionTime = Date.now(); // Reset timer idle
+}
+
+// Mendengarkan perubahan visibility (Standar Web)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') handleAppHide();
+    else handleAppShow();
 });
 
-// 3. Fungsi Khusus Desktop: Cek idle (Admin menatap layar tanpa sentuh mouse/keyboard)
+// Mendengarkan focus/blur (Cadangan khusus untuk Android PWA Standalone)
+window.addEventListener('blur', handleAppHide);
+window.addEventListener('focus', handleAppShow);
+
+// 4. Fungsi Khusus Desktop: Cek idle (Admin menatap layar tanpa sentuh mouse/keyboard)
 setInterval(() => {
     if (isMobile) return; // <-- Hanya berjalan di Desktop
 
@@ -426,20 +438,18 @@ setInterval(() => {
                        !document.getElementById('edit-modal').classList.contains('hidden');
     
     if (isEditing) {
-        // Jika sedang mengedit form, anggap Admin sedang aktif agar data tidak hilang
         lastInteractionTime = Date.now();
         return;
     }
 
-    // Cek berapa lama Admin tidak menggerakkan mouse/mengetik
     const idleTime = Date.now() - lastInteractionTime;
 
-    // Jika diam (idle) lebih dari 2 menit, langsung refresh
     if (idleTime >= DESKTOP_IDLE_LIMIT) {
         console.log('Desktop idle 2 menit tercapai, merefresh data transaksi...');
         window.location.reload();
     }
 }, 5000); // Cek status idle setiap 5 detik
+// --- AKHIR KODE AUTO REFRESH ---
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
         window.addEventListener('firebase-admin-ready', function() {
