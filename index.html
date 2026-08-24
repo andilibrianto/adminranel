@@ -1007,22 +1007,29 @@ function openEditBannerModal(id = null) {
         fillScheduleInputs(b.data.scheduleStartTime, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
         fillScheduleInputs(b.data.scheduleEndTime, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
 
-        // --- TAMBAHKAN INI: Sembunyikan Jadwal jika Banner sudah Live/Aktif ---
+        // --- SEMBUNYIKAN JADWAL JIKA STATUSNYA SUDAH AKTIF/LIVE ---
         const scheduleWrapper = document.getElementById('schedule-wrapper');
         const now = new Date();
         let isLive = false;
         
-        if (b.data.scheduleStartTime) {
-            const start = new Date(b.data.scheduleStartTime);
-            if (start <= now) {
-                isLive = true; // Jika waktu mulai sudah lewat, berarti sudah live
+        if (b.data.active) {
+            let isScheduled = false;
+            if (b.data.scheduleStartTime) {
+                const start = new Date(b.data.scheduleStartTime);
+                if (start > now) {
+                    isScheduled = true; // Jika ada jadwal mulai tapi belum waktunya, berarti "Terjadwal"
+                }
+            }
+            
+            if (!isScheduled) {
+                isLive = true; // Jika aktif dan BUKAN terjadwal, berarti sudah LIVE
             }
         }
         
         if (isLive) {
-            scheduleWrapper.classList.add('hidden'); // Sembunyikan field jadwal
+            scheduleWrapper.classList.add('hidden'); // Sembunyikan field jadwal karena sudah live
         } else {
-            scheduleWrapper.classList.remove('hidden'); // Tampilkan field jadwal jika masih terjadwal/belum live
+            scheduleWrapper.classList.remove('hidden'); // Tampilkan field jadwal jika masih terjadwal/nonaktif
         }
 
         document.getElementById('banner-label-periode').value = b.data.labelPeriode || 'Periode';
