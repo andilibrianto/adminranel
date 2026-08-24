@@ -340,25 +340,33 @@
             <textarea id="banner-isiPesan" class="form-input" rows="5" placeholder="Tulis isi pesan informasi disini. Enter untuk baris baru." style="resize: vertical;"></textarea>
         </div>
 
-        <!-- FIELD KHUSUS PROMOSI (Default: Shown) -->
+                <!-- FIELD KHUSUS PROMOSI (Default: Shown) -->
         <div id="promo-only-fields">
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Periode</label>
+                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Periode</label>
+                <input type="text" id="banner-label-periode" class="form-input mb-2" placeholder="Contoh: Masa Promo" value="Periode">
+                <label class="text-xs text-gray-500 mb-1 block">Isi Periode</label>
                 <input type="text" id="banner-periode" class="form-input" placeholder="17 - 31 Agustus 2026">
             </div>
             
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Total Hadiah / Keuntungan</label>
+                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Total Hadiah / Keuntungan</label>
+                <input type="text" id="banner-label-hadiah" class="form-input mb-2" placeholder="Contoh: Bonus Utama" value="Total Hadiah / Keuntungan">
+                <label class="text-xs text-gray-500 mb-1 block">Isi Hadiah</label>
                 <input type="text" id="banner-hadiah" class="form-input" placeholder="Rp 1.7 Miliar">
             </div>
             
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Pemenang / Pengumuman</label>
+                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Pemenang / Pengumuman</label>
+                <input type="text" id="banner-label-pengumuman" class="form-input mb-2" placeholder="Contoh: Tanggal Pengumuman" value="Pemenang / Pengumuman">
+                <label class="text-xs text-gray-500 mb-1 block">Isi Pengumuman</label>
                 <input type="text" id="banner-pengumuman" class="form-input" placeholder="7 Orang, 5 September 2026">
             </div>
             
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Cara Mengikuti (Pisahkan dengan Enter)</label>
+                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Cara Mengikuti</label>
+                <input type="text" id="banner-label-caraIkut" class="form-input mb-2" placeholder="Contoh: Syarat & Ketentuan" value="Cara Mengikuti">
+                <label class="text-xs text-gray-500 mb-1 block">Isi Cara Mengikuti (Pisahkan dengan Enter)</label>
                 <textarea id="banner-caraIkut" class="form-input" rows="4" placeholder="1. Lakukan transaksi...&#10;2. Hubungi admin..."></textarea>
             </div>
         </div>
@@ -829,6 +837,7 @@ function toggleBannerFields() {
 function openEditBannerModal(id = null) {
     const deleteBtn = document.getElementById('delete-banner-btn');
     if (id) {
+        // --- MODE EDIT BANNER LAMA ---
         const b = allBanners.find(x => x.id === id);
         if (!b) return;
         document.getElementById('banner-doc-id').value = id;
@@ -836,6 +845,7 @@ function openEditBannerModal(id = null) {
         document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
         document.getElementById('banner-title').value = b.data.title || '';
         document.getElementById('banner-order').value = b.data.order || 1;
+        
         if (b.data.scheduleTime) {
             const dt = new Date(b.data.scheduleTime);
             const yyyy = dt.getFullYear();
@@ -849,31 +859,44 @@ function openEditBannerModal(id = null) {
             document.getElementById('banner-scheduleDate').value = '';
             document.getElementById('banner-scheduleTime').value = '';
         }
-        document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
+
+        // Ambil label custom, jika kosong gunakan default
+        document.getElementById('banner-label-periode').value = b.data.labelPeriode || 'Periode';
         document.getElementById('banner-periode').value = b.data.periode || '';
+        document.getElementById('banner-label-hadiah').value = b.data.labelHadiah || 'Total Hadiah / Keuntungan';
         document.getElementById('banner-hadiah').value = b.data.hadiah || '';
+        document.getElementById('banner-label-pengumuman').value = b.data.labelPengumuman || 'Pemenang / Pengumuman';
         document.getElementById('banner-pengumuman').value = b.data.pengumuman || '';
+        document.getElementById('banner-label-caraIkut').value = b.data.labelCaraIkut || 'Cara Mengikuti';
         document.getElementById('banner-caraIkut').value = (b.data.caraIkut || []).join('\n');
+
+        document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
         document.getElementById('banner-active').checked = b.data.active || false;
         deleteBtn.classList.remove('hidden');
     } else {
-        // INI BAGIAN ELSE (UNTUK TAMBAH BANNER BARU)
+        // --- MODE TAMBAH BANNER BARU ---
         document.getElementById('banner-doc-id').value = '';
         document.getElementById('banner-type').value = 'promo';
         document.getElementById('banner-imageUrl').value = '';
-        document.getElementById('banner-title').value = ''; // <--- PERBAIKAN: Hapus b.data
+        document.getElementById('banner-title').value = '';
         document.getElementById('banner-order').value = 1;
-            document.getElementById('banner-scheduleDate').value = '';
-            document.getElementById('banner-scheduleTime').value = '';
-        document.getElementById('banner-isiPesan').value = '';
+        document.getElementById('banner-scheduleDate').value = '';
+        document.getElementById('banner-scheduleTime').value = '';
+        
+        // Reset label ke default
+        document.getElementById('banner-label-periode').value = 'Periode';
         document.getElementById('banner-periode').value = '';
+        document.getElementById('banner-label-hadiah').value = 'Total Hadiah / Keuntungan';
         document.getElementById('banner-hadiah').value = '';
+        document.getElementById('banner-label-pengumuman').value = 'Pemenang / Pengumuman';
         document.getElementById('banner-pengumuman').value = '';
+        document.getElementById('banner-label-caraIkut').value = 'Cara Mengikuti';
         document.getElementById('banner-caraIkut').value = '';
+
+        document.getElementById('banner-isiPesan').value = '';
         document.getElementById('banner-active').checked = true;
         deleteBtn.classList.add('hidden');
     }
-    // Panggil fungsi toggle untuk merapikan tampilan form awal
     toggleBannerFields();
     document.getElementById('edit-banner-modal').classList.remove('hidden');
 }
@@ -887,7 +910,6 @@ async function saveBannerChange() {
     const scheduleTime = document.getElementById('banner-scheduleTime').value;
     let scheduleISO = null;
     if (scheduleDate && scheduleTime) {
-        // Gabungkan tanggal & jam, ubah ke ISO String standar
         scheduleISO = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
     }
 
@@ -896,21 +918,26 @@ async function saveBannerChange() {
         imageUrl: document.getElementById('banner-imageUrl').value,
         title: document.getElementById('banner-title').value,
         order: parseInt(document.getElementById('banner-order').value) || 1,
-        scheduleTime: scheduleISO, // <--- TAMBAHKAN INI
+        scheduleTime: scheduleISO,
         active: document.getElementById('banner-active').checked
     };
 
     if (type === 'info') {
         data.isiPesan = document.getElementById('banner-isiPesan').value;
-        // Kosongkan field promo agar tidak ikut tersimpan
-        data.periode = '';
-        data.hadiah = '';
-        data.pengumuman = '';
-        data.caraIkut = [];
+        // Kosongkan field promo
+        data.labelPeriode = ''; data.periode = '';
+        data.labelHadiah = ''; data.hadiah = '';
+        data.labelPengumuman = ''; data.pengumuman = '';
+        data.labelCaraIkut = ''; data.caraIkut = [];
     } else {
+        // Simpan label custom beserta isinya
+        data.labelPeriode = document.getElementById('banner-label-periode').value || 'Periode';
         data.periode = document.getElementById('banner-periode').value;
+        data.labelHadiah = document.getElementById('banner-label-hadiah').value || 'Total Hadiah / Keuntungan';
         data.hadiah = document.getElementById('banner-hadiah').value;
+        data.labelPengumuman = document.getElementById('banner-label-pengumuman').value || 'Pemenang / Pengumuman';
         data.pengumuman = document.getElementById('banner-pengumuman').value;
+        data.labelCaraIkut = document.getElementById('banner-label-caraIkut').value || 'Cara Mengikuti';
         data.caraIkut = document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== '');
         // Kosongkan field info
         data.isiPesan = '';
