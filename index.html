@@ -127,10 +127,11 @@
             </button>
         </header>
 
-        <div class="flex gap-2 mb-6">
+        <div class="flex gap-2 mb-6 flex-wrap">
             <button onclick="switchTab('orders')" id="tab-orders" class="btn-pk text-sm">Riwayat Pesanan</button>
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm">Data Pengguna</button>
             <button onclick="switchTab('banners')" id="tab-banners" class="btn-outline text-sm">Banner Promo</button>
+            <button onclick="switchTab('promos')" id="tab-promos" class="btn-outline text-sm">Kode Promo</button>
         </div>
 
         <div id="view-orders">
@@ -206,7 +207,60 @@
             </div>
         </div>
     </div>
+        <div id="view-promos" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Kelola Kode Promo</h2>
+                <button onclick="openEditPromoModal()" class="btn-pk text-sm">
+                    <i class="fa-solid fa-plus mr-2"></i> Tambah Promo
+                </button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kode Promo</th>
+                            <th>Nominal Diskon</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="promos-table-body">
+                        <tr><td colspan="4" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data promo.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
+    <!-- MODAL TAMBAH/EDIT KODE PROMO -->
+    <div id="edit-promo-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+        <div class="card p-6 w-full max-w-md my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold">Kelola Kode Promo</h3>
+                <button onclick="closeEditPromoModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <input type="hidden" id="promo-doc-id">
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Kode Promo (Huruf Besar)</label>
+                <input type="text" id="promo-code" class="form-input uppercase" placeholder="Contoh: RAMADHAN2026" oninput="this.value = this.value.toUpperCase()">
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 mb-1 block">Nominal Diskon (Rp)</label>
+                <input type="number" id="promo-discount" class="form-input" placeholder="Contoh: 5000">
+            </div>
+            
+            <div class="mb-6 flex items-center gap-2">
+                <input type="checkbox" id="promo-active" class="w-4 h-4 accent-pk">
+                <label for="promo-active" class="text-sm text-gray-300">Aktifkan Kode Promo</label>
+            </div>
+
+            <button onclick="savePromoChange()" class="btn-pk w-full mt-4">Simpan Promo</button>
+            <button onclick="closeEditPromoModal()" class="bg-gray-500/10 text-gray-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold">Batal</button>
+            <button onclick="deletePromo()" id="delete-promo-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Promo</button>
+        </div>
+    </div>
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -719,31 +773,48 @@ setInterval(() => {
             } catch (err) { alert("Gagal menyimpan data. Mohon cek kembali isian form."); }
         }
 
-        function switchTab(tabName) {
+                function switchTab(tabName) {
             if (tabName === 'orders') {
                 document.getElementById('view-orders').classList.remove('hidden');
                 document.getElementById('view-users').classList.add('hidden');
                 document.getElementById('view-banners').classList.add('hidden');
+                document.getElementById('view-promos').classList.add('hidden');
                 document.getElementById('tab-orders').className = 'btn-pk text-sm';
                 document.getElementById('tab-users').className = 'btn-outline text-sm';
                 document.getElementById('tab-banners').className = 'btn-outline text-sm';
+                document.getElementById('tab-promos').className = 'btn-outline text-sm';
             } else if (tabName === 'users') {
                 document.getElementById('view-orders').classList.add('hidden');
                 document.getElementById('view-users').classList.remove('hidden');
                 document.getElementById('view-banners').classList.add('hidden');
+                document.getElementById('view-promos').classList.add('hidden');
                 document.getElementById('tab-orders').className = 'btn-outline text-sm';
                 document.getElementById('tab-users').className = 'btn-pk text-sm';
                 document.getElementById('tab-banners').className = 'btn-outline text-sm';
+                document.getElementById('tab-promos').className = 'btn-outline text-sm';
                 const tbody = document.getElementById('users-table-body');
                 if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
             } else if (tabName === 'banners') {
                 document.getElementById('view-orders').classList.add('hidden');
                 document.getElementById('view-users').classList.add('hidden');
                 document.getElementById('view-banners').classList.remove('hidden');
+                document.getElementById('view-promos').classList.add('hidden');
                 document.getElementById('tab-orders').className = 'btn-outline text-sm';
                 document.getElementById('tab-users').className = 'btn-outline text-sm';
                 document.getElementById('tab-banners').className = 'btn-pk text-sm';
+                document.getElementById('tab-promos').className = 'btn-outline text-sm';
                 if (allBanners.length === 0 && document.getElementById('banners-list').innerText.includes('Klik tab ini')) loadBanners();
+            } else if (tabName === 'promos') {
+                document.getElementById('view-orders').classList.add('hidden');
+                document.getElementById('view-users').classList.add('hidden');
+                document.getElementById('view-banners').classList.add('hidden');
+                document.getElementById('view-promos').classList.remove('hidden');
+                document.getElementById('tab-orders').className = 'btn-outline text-sm';
+                document.getElementById('tab-users').className = 'btn-outline text-sm';
+                document.getElementById('tab-banners').className = 'btn-outline text-sm';
+                document.getElementById('tab-promos').className = 'btn-pk text-sm';
+                const promoBody = document.getElementById('promos-table-body');
+                if (promoBody.innerText.includes('Klik tab ini')) loadPromos();
             }
         }
 
@@ -1228,7 +1299,126 @@ async function saveBannerChange() {
             } catch (err) { alert("Gagal menghapus banner."); } 
             finally { hideLoading(); }
         }
+        let allPromos = [];
 
+        function loadPromos() {
+            const { db, collection, query, onSnapshot } = window.firebaseAdmin;
+            const tbody = document.getElementById('promos-table-body');
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-8">Memuat data promo...</td></tr>`;
+            const q = query(collection(db, "promo_codes"));
+            onSnapshot(q, (snapshot) => {
+                allPromos = [];
+                snapshot.forEach((doc) => allPromos.push({ id: doc.id, data: doc.data() }));
+                renderPromos();
+            }, (error) => {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
+            });
+        }
+
+        function renderPromos() {
+            const tbody = document.getElementById('promos-table-body');
+            if (allPromos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-8">Belum ada kode promo.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = allPromos.map(p => {
+                const discount = p.data.discount ? `Rp ${p.data.discount.toLocaleString('id-ID')}` : 'Rp 0';
+                const isActive = p.data.active !== false; // Default true jika field tidak ada
+                const statusClass = isActive ? 'badge-green' : 'badge-red';
+                const statusText = isActive ? 'Aktif' : 'Nonaktif';
+                return `
+                    <tr>
+                        <td class="font-mono text-xs whitespace-nowrap">${p.id}</td>
+                        <td class="font-bold whitespace-nowrap text-sm">${discount}</td>
+                        <td><span class="badge ${statusClass} whitespace-nowrap">${statusText}</span></td>
+                        <td class="whitespace-nowrap">
+                            <button onclick="openEditPromoModal('${p.id}')" class="btn-outline text-xs px-3 py-1.5">
+                                <i class="fa-solid fa-pen mr-1"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openEditPromoModal(id = null) {
+            const deleteBtn = document.getElementById('delete-promo-btn');
+            const codeInput = document.getElementById('promo-code');
+            
+            if (id) {
+                const p = allPromos.find(x => x.id === id);
+                if (!p) return;
+                document.getElementById('promo-doc-id').value = id;
+                codeInput.value = id;
+                codeInput.readOnly = true; // Kode promo tidak bisa diubah saat edit
+                document.getElementById('promo-discount').value = p.data.discount || 0;
+                document.getElementById('promo-active').checked = p.data.active !== false;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('promo-doc-id').value = '';
+                codeInput.value = '';
+                codeInput.readOnly = false; // Bisa diketik saat buat baru
+                document.getElementById('promo-discount').value = '';
+                document.getElementById('promo-active').checked = true;
+                deleteBtn.classList.add('hidden');
+            }
+            document.getElementById('edit-promo-modal').classList.remove('hidden');
+        }
+
+        function closeEditPromoModal() { 
+            document.getElementById('edit-promo-modal').classList.add('hidden'); 
+        }
+
+        async function savePromoChange() {
+            const id = document.getElementById('promo-doc-id').value;
+            const code = document.getElementById('promo-code').value.trim().toUpperCase();
+            const discount = parseInt(document.getElementById('promo-discount').value) || 0;
+            const active = document.getElementById('promo-active').checked;
+
+            if (!code) { alert("Kode promo wajib diisi!"); return; }
+
+            showLoading();
+            try {
+                const { db, doc, setDoc, updateDoc } = window.firebaseAdmin;
+                if (!id) {
+                    // Buat baru (Doc ID = Kode Promo)
+                    await setDoc(doc(db, "promo_codes", code), {
+                        discount: discount,
+                        active: active
+                    });
+                    showToast("Kode promo berhasil ditambahkan!");
+                } else {
+                    // Update promo lama
+                    await updateDoc(doc(db, "promo_codes", id), {
+                        discount: discount,
+                        active: active
+                    });
+                    showToast("Kode promo berhasil diperbarui!");
+                }
+                closeEditPromoModal();
+            } catch (err) { 
+                alert("Gagal menyimpan promo."); console.error(err); 
+            } finally { 
+                hideLoading(); 
+            }
+        }
+
+        async function deletePromo() {
+            const id = document.getElementById('promo-doc-id').value;
+            if (!id) return;
+            if (!confirm("Yakin ingin menghapus kode promo ini?")) return;
+            showLoading();
+            try {
+                const { db, doc, deleteDoc } = window.firebaseAdmin;
+                await deleteDoc(doc(db, "promo_codes", id));
+                showToast("Kode promo berhasil dihapus!");
+                closeEditPromoModal();
+            } catch (err) { 
+                alert("Gagal menghapus promo."); 
+            } finally { 
+                hideLoading(); 
+            }
+        }
         function requestNotificationPermission() {
             if (!('Notification' in window)) return;
             if (Notification.permission === 'default') {
