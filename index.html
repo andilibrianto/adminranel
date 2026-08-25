@@ -207,13 +207,21 @@
             </div>
         </div>
     </div>
-        <div id="view-promos" class="hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold">Kelola Kode Promo</h2>
+                <div id="view-promos" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-lg font-bold">Kelola Kode Promo</h2>
+                    <p class="text-xs text-gray-500 mt-1">Daftar kode promo diskon ongkir untuk pelanggan</p>
+                </div>
                 <button onclick="openEditPromoModal()" class="btn-pk text-sm">
                     <i class="fa-solid fa-plus mr-2"></i> Tambah Promo
                 </button>
             </div>
+            
+            <div id="promos-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p class="text-gray-500 text-sm col-span-full">Klik tab ini untuk memuat data promo.</p>
+            </div>
+        </div>
             <div class="card overflow-x-auto">
                 <table>
                     <thead>
@@ -1315,28 +1323,37 @@ async function saveBannerChange() {
             });
         }
 
-        function renderPromos() {
-            const tbody = document.getElementById('promos-table-body');
+                function renderPromos() {
+            const listEl = document.getElementById('promos-list');
             if (allPromos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-8">Belum ada kode promo.</td></tr>`;
+                listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full text-center py-8">Belum ada kode promo. Klik "Tambah Promo" untuk membuat baru.</p>';
                 return;
             }
-            tbody.innerHTML = allPromos.map(p => {
+            
+            listEl.innerHTML = allPromos.map(p => {
                 const discount = p.data.discount ? `Rp ${p.data.discount.toLocaleString('id-ID')}` : 'Rp 0';
                 const isActive = p.data.active !== false; // Default true jika field tidak ada
-                const statusClass = isActive ? 'badge-green' : 'badge-red';
+                const statusClass = isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
                 const statusText = isActive ? 'Aktif' : 'Nonaktif';
+                
                 return `
-                    <tr>
-                        <td class="font-mono text-xs whitespace-nowrap">${p.id}</td>
-                        <td class="font-bold whitespace-nowrap text-sm">${discount}</td>
-                        <td><span class="badge ${statusClass} whitespace-nowrap">${statusText}</span></td>
-                        <td class="whitespace-nowrap">
-                            <button onclick="openEditPromoModal('${p.id}')" class="btn-outline text-xs px-3 py-1.5">
-                                <i class="fa-solid fa-pen mr-1"></i> Edit
-                            </button>
-                        </td>
-                    </tr>
+                    <div class="card p-4 flex flex-col gap-3 relative">
+                        <div class="flex justify-between items-start">
+                            <div class="bg-dk-700 px-3 py-1.5 rounded-lg">
+                                <p class="font-mono text-sm font-bold text-pk tracking-wider">${p.id}</p>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded-md ${statusClass} whitespace-nowrap">${statusText}</span>
+                        </div>
+                        
+                        <div class="border-t border-dk-500/50 pt-3">
+                            <p class="text-[11px] text-gray-500 uppercase tracking-wider mb-1">Nominal Diskon</p>
+                            <p class="text-xl font-extrabold text-white">${discount}</p>
+                        </div>
+                        
+                        <button onclick="openEditPromoModal('${p.id}')" class="btn-outline text-xs py-2 mt-2 w-full">
+                            <i class="fa-solid fa-pen mr-1"></i> Edit / Hapus
+                        </button>
+                    </div>
                 `;
             }).join('');
         }
