@@ -769,8 +769,14 @@ setInterval(() => {
                     tbody.innerHTML = usersData.map(d => {
                         let createdDate = '-';
                         if (d.createdAt) { try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) { createdDate = d.createdAt; } }
+                        
+                        // CEK STATUS INSTALASI PWA
+                        const isInstalled = d.isInstalled === true;
+                        // Jika true, teks hijau (text-green-400) & bold. Jika false, tetap abu-abu (text-gray-300)
+                        const emailClass = isInstalled ? 'text-green-400 font-bold' : 'text-gray-300';
+                        
                         return `<tr>
-                            <td class="text-xs text-gray-300 whitespace-nowrap">${d.email || '-'}</td>
+                            <td class="text-xs ${emailClass} whitespace-nowrap">${d.email || '-'}</td>
                             <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
                             <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
                             <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
