@@ -1576,10 +1576,23 @@
             finally { hideLoading(); }
         }
 
-        async function migrateHardcodedData() {
+                async function migrateHardcodedData() {
+            // 1. Cek apakah database sudah memiliki data sebelumnya
+            const { db, collection, getDocs } = window.firebaseAdmin;
+            try {
+                const existingData = await getDocs(collection(db, "katalog_paket_data"));
+                if (!existingData.empty) {
+                    const confirmMigrate = confirm("PERINGATAN: Data katalog di Firestore sudah ada!\n\nJika Anda melanjutkan, data akan TERDUPLIKAT (ganda). Apakah Anda yakin ingin melanjutkan?");
+                    if (!confirmMigrate) return;
+                }
+            } catch (err) {
+                console.error("Gagal cek data eksisting:", err);
+            }
+
+            // 2. Lanjut migrasi jika tidak ada data atau user konfirmasi
             if (!confirm("Fitur ini akan memindahkan SEMUA data hardcoded ke Firestore. Lanjutkan?")) return;
+            
             showLoading();
-            const { db, collection, doc, setDoc } = window.firebaseAdmin;
             try {
                 for (const [catType, items] of Object.entries(MIGRATION_DATA)) {
                     for (const itemData of items) {
