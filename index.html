@@ -1288,7 +1288,7 @@
             });
         }
 
-                        function renderCatalogItems() {
+            function renderCatalogItems() {
             const catType = document.getElementById('catalog-type').value;
             const schema = CATALOG_SCHEMAS[catType];
             const tbody = document.getElementById('catalog-table-body');
@@ -1339,8 +1339,10 @@
             };
 
             let html = '';
+            // Opsi sorting natural (mendukung angka di dalam teks, misal: "1 Hari" < "2 Hari" < "10 Hari")
+            const sortOpt = { numeric: true, sensitivity: 'base' };
 
-            // === LOGIKA PENGURUTAN A-Z DAN DROPDOWN ===
+            // === LOGIKA PENGURUTAN A-Z / 1-100 DAN DROPDOWN ===
             if (catType === 'katalog_pulsa' || catType === 'katalog_token_pln') {
                 // Tanpa dropdown, urutkan nominal terkecil ke terbesar
                 items.sort((a, b) => (a.data.nominal || 0) - (b.data.nominal || 0));
@@ -1351,10 +1353,10 @@
                 items.sort((a, b) => {
                     const pA = (a.data.provider || '').toLowerCase();
                     const pB = (b.data.provider || '').toLowerCase();
-                    if (pA !== pB) return pA.localeCompare(pB);
+                    if (pA !== pB) return pA.localeCompare(pB, 'id', sortOpt);
                     const dA = (a.data.duration || '').toLowerCase();
                     const dB = (b.data.duration || '').toLowerCase();
-                    if (dA !== dB) return dA.localeCompare(dB);
+                    if (dA !== dB) return dA.localeCompare(dB, 'id', sortOpt);
                     return (a.data.price || 0) - (b.data.price || 0);
                 });
 
@@ -1383,8 +1385,8 @@
                 items.sort((a, b) => {
                     const cA = (a.data.category || '').toLowerCase();
                     const cB = (b.data.category || '').toLowerCase();
-                    if (cA !== cB) return cA.localeCompare(cB);
-                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase());
+                    if (cA !== cB) return cA.localeCompare(cB, 'id', sortOpt);
+                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase(), 'id', sortOpt);
                 });
 
                 let currentCat = '';
@@ -1403,8 +1405,8 @@
                 items.sort((a, b) => {
                     const gA = (a.data.game || '').toLowerCase();
                     const gB = (b.data.game || '').toLowerCase();
-                    if (gA !== gB) return gA.localeCompare(gB);
-                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase());
+                    if (gA !== gB) return gA.localeCompare(gB, 'id', sortOpt);
+                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase(), 'id', sortOpt);
                 });
 
                 let currentGame = '';
@@ -1423,11 +1425,11 @@
                 items.sort((a, b) => {
                     const oA = (a.data.os || '').toLowerCase();
                     const oB = (b.data.os || '').toLowerCase();
-                    if (oA !== oB) return oA.localeCompare(oB);
+                    if (oA !== oB) return oA.localeCompare(oB, 'id', sortOpt);
                     const bA = (a.data.brand || '').toLowerCase();
                     const bB = (b.data.brand || '').toLowerCase();
-                    if (bA !== bB) return bA.localeCompare(bB);
-                    return (a.data.model || '').toLowerCase().localeCompare((b.data.model || '').toLowerCase());
+                    if (bA !== bB) return bA.localeCompare(bB, 'id', sortOpt);
+                    return (a.data.model || '').toLowerCase().localeCompare((b.data.model || '').toLowerCase(), 'id', sortOpt);
                 });
 
                 let currentOS = '';
@@ -1455,8 +1457,8 @@
                 items.sort((a, b) => {
                     const oA = (a.data.os || '').toLowerCase();
                     const oB = (b.data.os || '').toLowerCase();
-                    if (oA !== oB) return oA.localeCompare(oB);
-                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase());
+                    if (oA !== oB) return oA.localeCompare(oB, 'id', sortOpt);
+                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase(), 'id', sortOpt);
                 });
 
                 let currentOS = '';
