@@ -1288,22 +1288,170 @@
             });
         }
 
-        function renderCatalogItems() {
+                function renderCatalogItems() {
             const catType = document.getElementById('catalog-type').value;
             const schema = CATALOG_SCHEMAS[catType];
             const tbody = document.getElementById('catalog-table-body');
-            if (currentCatalogItems.length === 0) { tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; return; }
-            
-            tbody.innerHTML = currentCatalogItems.map(item => {
-                let rowHtml = '<tr>';
+            const colCount = schema.fields.length + 1;
+
+            if (currentCatalogItems.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; 
+                return; 
+            }
+
+            let items = [...currentCatalogItems];
+
+            // Helper untuk format nilai tabel
+            const formatVal = (f, val) => {
+                if (val === null || val === undefined || val === '') return '-';
+                if (f.type === 'number' && f.key === 'price') return `Rp ${parseInt(val).toLocaleString('id-ID')}`;
+                if (f.type === 'number' && f.key === 'nominal') return parseInt(val).toLocaleString('id-ID');
+                return val;
+            };
+
+            // Helper untuk membuat baris item
+            const createItemRow = (item) => {
+                let rowHtml = '<tr class="border-b border-[#2a2a2a]">';
                 schema.fields.forEach(f => {
-                    let val = item.data[f.key] || '-';
-                    if (f.type === 'number' && f.key === 'price') val = `Rp ${parseInt(val).toLocaleString('id-ID')}`;
-                    rowHtml += `<td class="text-xs text-gray-300">${val}</td>`;
+                    rowHtml += `<td class="text-xs text-gray-300 px-4 py-3">${formatVal(f, item.data[f.key])}</td>`;
                 });
-                rowHtml += `<td><button onclick="openEditCatalogModal('${item.id}')" class="btn-outline text-xs px-3 py-1.5"><i class="fa-solid fa-pen mr-1"></i> Edit</button></td></tr>`;
+                rowHtml += `<td class="px-4 py-3"><button onclick="openEditCatalogModal('${item.id}')" class="btn-outline text-xs px-3 py-1.5"><i class="fa-solid fa-pen mr-1"></i> Edit</button></td></tr>`;
                 return rowHtml;
-            }).join('');
+            };
+
+            // Helper untuk membuat baris kepala (Sub-Header)
+            const createHeaderRow = (title, level = 1) => {
+                const bgClass = level === 1 ? 'bg-[#1f1f1f]' : 'bg-[#171717]';
+                const textClass = level === 1 ? 'text-pk font-bold text-sm uppercase tracking-wider' : 'text-gray-400 font-semibold text-xs uppercase';
+                const padding = level === 1 ? 'px-4 py-2.5' : 'px-8 py-2';
+                return `<tr><td colspan="${colCount}" class="${bgClass} ${padding} ${textClass} border-b border-t border-[#333]">${title}</td></tr>`;
+            };
+
+            let html = '';
+
+            // === LOGIKA PENGURUTAN DAN PENGGRUPAN A-Z ===
+            if (catType === 'katalog_pulsa' || catType === 'katalog_token_pln') {
+                // Tidak dikategorikan, urutkan berdasarkan nominal terkecil ke terbesar
+                items.sort((a, b) => (a.data.nominal || 0) - (b.data.nominal || 0));
+                html += items.map(createItemRow).join('');
+            } 
+            else if (catType === 'katalog_paket_data' || catType === 'katalog_perdana') {
+                // Kategori: Provider > Durasi (Urut Abjad)
+                items.sort((a, b) => {
+                    const pA = (a.data.provider || '').toLowerCase();
+                    const pB = (b.data.provider || '').toLowerCase();
+                    if (pA !== pB) return pA.localeCompare(pB);
+                    
+                    const dA = (a.data.duration || '').toLowerCase();
+                    const dB = (b.data.duration || '').toLowerCase();
+                    if (dA !== dB) return dA.localeCompare(dB);
+
+                    return (a.data.price || 0) - (b.data.price || 0);
+                });
+
+                let currentProvider = '';
+                let currentDuration = '';
+                items.forEach(item => {
+                    if (item.data.provider !== currentProvider) {
+                        currentProvider = item.data.provider;
+                        currentDuration = ''; 
+                        html += createHeaderRow(currentProvider, 1);
+                    }
+                    if (item.data.duration !== currentDuration) {
+                        currentDuration = item.data.duration;
+                        html += createHeaderRow(currentDuration, 2);
+                    }
+                    html += createItemRow(item);
+                });
+            } 
+            else if (catType === 'katalog_aksesoris') {
+                // Kategori: Kategori (Urut Abjad)
+                items.sort((a, b) => {
+                    const cA = (a.data.category || '').toLowerCase();
+                    const cB = (b.data.category || '').toLowerCase();
+                    if (cA !== cB) return cA.localeCompare(cB);
+                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase());
+                });
+
+                let currentCat = '';
+                items.forEach(item => {
+                    if (item.data.category !== currentCat) {
+                        currentCat = item.data.category;
+                        html += createHeaderRow(currentCat, 1);
+                    }
+                    html += createItemRow(item);
+                });
+            } 
+            else if (catType === 'katalog_game') {
+                // Kategori: Nama Game (Urut Abjad)
+                items.sort((a, b) => {
+                    const gA = (a.data.game || '').toLowerCase();
+                    const gB = (b.data.game || '').toLowerCase();
+                    if (gA !== gB) return gA.localeCompare(gB);
+                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase());
+                });
+
+                let currentGame = '';
+                items.forEach(item => {
+                    if (item.data.game !== currentGame) {
+                        currentGame = item.data.game;
+                        html += createHeaderRow(currentGame, 1);
+                    }
+                    html += createItemRow(item);
+                });
+            } 
+            else if (catType === 'katalog_gadget') {
+                // Kategori: OS > Merk (Urut Abjad)
+                items.sort((a, b) => {
+                    const oA = (a.data.os || '').toLowerCase();
+                    const oB = (b.data.os || '').toLowerCase();
+                    if (oA !== oB) return oA.localeCompare(oB);
+                    
+                    const bA = (a.data.brand || '').toLowerCase();
+                    const bB = (b.data.brand || '').toLowerCase();
+                    if (bA !== bB) return bA.localeCompare(bB);
+
+                    return (a.data.model || '').toLowerCase().localeCompare((b.data.model || '').toLowerCase());
+                });
+
+                let currentOS = '';
+                let currentBrand = '';
+                items.forEach(item => {
+                    if (item.data.os !== currentOS) {
+                        currentOS = item.data.os;
+                        currentBrand = '';
+                        html += createHeaderRow(currentOS, 1);
+                    }
+                    if (item.data.brand !== currentBrand) {
+                        currentBrand = item.data.brand;
+                        html += createHeaderRow(currentBrand, 2);
+                    }
+                    html += createItemRow(item);
+                });
+            } 
+            else if (catType === 'katalog_kendala') {
+                // Kategori: OS (Urut Abjad)
+                items.sort((a, b) => {
+                    const oA = (a.data.os || '').toLowerCase();
+                    const oB = (b.data.os || '').toLowerCase();
+                    if (oA !== oB) return oA.localeCompare(oB);
+                    return (a.data.name || '').toLowerCase().localeCompare((b.data.name || '').toLowerCase());
+                });
+
+                let currentOS = '';
+                items.forEach(item => {
+                    if (item.data.os !== currentOS) {
+                        currentOS = item.data.os;
+                        html += createHeaderRow(currentOS, 1);
+                    }
+                    html += createItemRow(item);
+                });
+            } 
+            else {
+                html += items.map(createItemRow).join('');
+            }
+
+            tbody.innerHTML = html;
         }
 
         function openEditCatalogModal(id = null) {
