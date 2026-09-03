@@ -134,6 +134,7 @@
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm whitespace-nowrap">Data Pengguna</button>
             <button onclick="switchTab('banners')" id="tab-banners" class="btn-outline text-sm whitespace-nowrap">Banner Promo</button>
             <button onclick="switchTab('promos')" id="tab-promos" class="btn-outline text-sm whitespace-nowrap">Kode Promo</button>
+            <button onclick="switchTab('catalog')" id="tab-catalog" class="btn-outline text-sm whitespace-nowrap">Katalog Produk</button>
         </div>
 
         <div id="view-orders">
@@ -197,7 +198,7 @@
             </div>
         </div>
 
-                <div id="view-banners" class="hidden">
+        <div id="view-banners" class="hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">Kelola Banner Promo</h2>
                 <button onclick="openEditBannerModal()" class="btn-pk text-sm">
@@ -209,7 +210,6 @@
             </div>
         </div>
 
-        <!-- PINDDAH KODE INI KE DALAM (Sebelum penutup dashboard-view) -->
         <div id="view-promos" class="hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">Kelola Kode Promo</h2>
@@ -233,38 +233,79 @@
                 </table>
             </div>
         </div>
-    </div> <!-- INI ADALAH PENUTUP DASHBOARD-VIEW YANG BENAR -->
 
-    <!-- MODAL TAMBAH/EDIT KODE PROMO -->
+        <div id="view-catalog" class="hidden">
+            <div class="flex flex-wrap gap-4 mb-6">
+                <select id="catalog-type" class="form-input max-w-xs" onchange="loadCatalogItems()">
+                    <option value="katalog_paket_data">Paket Data Kuota</option>
+                    <option value="katalog_pulsa">Pulsa All Provider</option>
+                    <option value="katalog_token_pln">Token PLN</option>
+                    <option value="katalog_aksesoris">Aksesoris Gadget</option>
+                    <option value="katalog_game">Topup Game</option>
+                    <option value="katalog_perdana">Kartu Perdana</option>
+                    <option value="katalog_gadget">Gadget (OS, Merk, Tipe)</option>
+                    <option value="katalog_kendala">Kendala Service</option>
+                </select>
+                <button onclick="openEditCatalogModal()" class="btn-pk text-sm">
+                    <i class="fa-solid fa-plus mr-2"></i> Tambah Item
+                </button>
+                <button onclick="migrateHardcodedData()" class="btn-outline text-sm border-green-500 text-green-400">
+                    <i class="fa-solid fa-database mr-2"></i> Migrasi Database (Klik Sekali)
+                </button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead id="catalog-table-head"></thead>
+                    <tbody id="catalog-table-body">
+                        <tr><td class="text-center text-gray-500 py-8">Pilih kategori untuk memuat data.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CATALOG -->
+    <div id="edit-catalog-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+        <div class="card p-6 w-full max-w-md my-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold" id="catalog-modal-title">Tambah Item</h3>
+                <button onclick="closeEditCatalogModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <input type="hidden" id="catalog-doc-id">
+            <input type="hidden" id="catalog-active-type">
+            <div id="catalog-form-fields" class="space-y-4"></div>
+            <button onclick="saveCatalogChange()" class="btn-pk w-full mt-6">Simpan</button>
+            <button onclick="deleteCatalogItem()" id="delete-catalog-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Item</button>
+        </div>
+    </div>
+
+    <!-- MODAL PROMO -->
     <div id="edit-promo-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-md my-8">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold">Kelola Kode Promo</h3>
                 <button onclick="closeEditPromoModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
             <input type="hidden" id="promo-doc-id">
-            
             <div class="mb-4">
                 <label class="text-xs text-gray-500 mb-1 block">Kode Promo (Huruf Besar)</label>
                 <input type="text" id="promo-code" class="form-input uppercase" placeholder="Contoh: RAMADHAN2026" oninput="this.value = this.value.toUpperCase()">
             </div>
-            
             <div class="mb-4">
                 <label class="text-xs text-gray-500 mb-1 block">Nominal Diskon (Rp)</label>
                 <input type="number" id="promo-discount" class="form-input" placeholder="Contoh: 5000">
             </div>
-            
             <div class="mb-6 flex items-center gap-2">
                 <input type="checkbox" id="promo-active" class="w-4 h-4 accent-pk">
                 <label for="promo-active" class="text-sm text-gray-300">Aktifkan Kode Promo</label>
             </div>
-
             <button onclick="savePromoChange()" class="btn-pk w-full mt-4">Simpan Promo</button>
             <button onclick="closeEditPromoModal()" class="bg-gray-500/10 text-gray-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold">Batal</button>
             <button onclick="deletePromo()" id="delete-promo-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Promo</button>
         </div>
     </div>
+
+    <!-- MODAL EDIT ORDER -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
         <div class="card p-6 w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
@@ -352,189 +393,123 @@
         </div>
     </div>
 
+    <!-- MODAL BANNER -->
     <div id="edit-banner-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-    <div class="card p-6 w-full max-w-lg my-8 max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold">Kelola Banner</h3>
-            <button onclick="closeEditBannerModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-        </div>
-            <!-- MODAL PREVIEW BANNER -->
-    <div id="preview-banner-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-[60] overflow-y-auto">
         <div class="card p-6 w-full max-w-lg my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-pk">Preview Tampilan Pelanggan</h3>
-                <button onclick="closePreviewBanner()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="text-lg font-bold">Kelola Banner</h3>
+                <button onclick="closeEditBannerModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
-            <!-- Konten Preview akan dimasukkan di sini oleh JavaScript -->
-            <div id="preview-content" class="pb-10"></div>
-            
-            <button onclick="closePreviewBanner()" class="btn-outline w-full mt-4">Tutup Preview</button>
-        </div>
-    </div>
-        <input type="hidden" id="banner-doc-id">
-        
-        <div class="mb-4">
-            <label class="text-xs text-gray-500 mb-1 block">Jenis Konten</label>
-            <select id="banner-type" class="form-input" onchange="toggleBannerFields()">
-                <option value="promo">Promosi</option>
-                <option value="info">Informasi</option>
-            </select>
-        </div>
-        
-        <div class="mb-4">
-            <label class="text-xs text-gray-500 mb-1 block">Link Gambar Banner (URL)</label>
-            <input type="text" id="banner-imageUrl" class="form-input" placeholder="https://... atau ./Gambar/Banner_Promo_1.png">
-        </div>
-        
-        <div class="mb-4">
-            <label class="text-xs text-gray-500 mb-1 block">Judul Promo / Informasi</label>
-            <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART atau Pengumuman Libur">
-        </div>
-        
-        <div id="schedule-wrapper" class="mb-4">
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Jadwal Mulai (Opsional)</label>
-                    <input type="date" id="banner-scheduleStartDate" class="form-input mb-2">
-                    <input type="time" id="banner-scheduleStartTime" class="form-input">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Jadwal Selesai (Opsional)</label>
-                    <input type="date" id="banner-scheduleEndDate" class="form-input mb-2">
-                    <input type="time" id="banner-scheduleEndTime" class="form-input">
+            <div id="preview-banner-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-[60] overflow-y-auto">
+                <div class="card p-6 w-full max-w-lg my-8 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-pk">Preview Tampilan Pelanggan</h3>
+                        <button onclick="closePreviewBanner()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <div id="preview-content" class="pb-10"></div>
+                    <button onclick="closePreviewBanner()" class="btn-outline w-full mt-4">Tutup Preview</button>
                 </div>
             </div>
-            <p class="text-[10px] text-gray-500 mt-1">Kosongkan jika ingin tayang selamanya.</p>
-        </div>
-        
-        <!-- FIELD KHUSUS INFORMASI (Default: Hidden) -->
-        <div id="info-only-fields" class="mb-4 hidden">
-            <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
-            <textarea id="banner-isiPesan" class="form-input" rows="5" placeholder="Tulis isi pesan informasi disini. Enter untuk baris baru." style="resize: vertical;"></textarea>
-        </div>
-
-                <!-- FIELD KHUSUS PROMOSI (Default: Shown) -->
-        <div id="promo-only-fields">
+            <input type="hidden" id="banner-doc-id">
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Periode</label>
-                <input type="text" id="banner-label-periode" class="form-input mb-2" placeholder="Contoh: Masa Promo" value="Periode">
-                <label class="text-xs text-gray-500 mb-1 block">Isi Periode</label>
-                <input type="text" id="banner-periode" class="form-input" placeholder="17 - 31 Agustus 2026">
+                <label class="text-xs text-gray-500 mb-1 block">Jenis Konten</label>
+                <select id="banner-type" class="form-input" onchange="toggleBannerFields()">
+                    <option value="promo">Promosi</option>
+                    <option value="info">Informasi</option>
+                </select>
             </div>
-            
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Total Hadiah / Keuntungan</label>
-                <input type="text" id="banner-label-hadiah" class="form-input mb-2" placeholder="Contoh: Bonus Utama" value="Total Hadiah / Keuntungan">
-                <label class="text-xs text-gray-500 mb-1 block">Isi Hadiah</label>
-                <input type="text" id="banner-hadiah" class="form-input" placeholder="Rp 1.7 Miliar">
+                <label class="text-xs text-gray-500 mb-1 block">Link Gambar Banner (URL)</label>
+                <input type="text" id="banner-imageUrl" class="form-input" placeholder="https://... atau ./Gambar/Banner_Promo_1.png">
             </div>
-            
             <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Pemenang / Pengumuman</label>
-                <input type="text" id="banner-label-pengumuman" class="form-input mb-2" placeholder="Contoh: Tanggal Pengumuman" value="Pemenang / Pengumuman">
-                <label class="text-xs text-gray-500 mb-1 block">Isi Pengumuman</label>
-                <input type="text" id="banner-pengumuman" class="form-input" placeholder="7 Orang, 5 September 2026">
+                <label class="text-xs text-gray-500 mb-1 block">Judul Promo / Informasi</label>
+                <input type="text" id="banner-title" class="form-input" placeholder="PAHLAWAN SMART atau Pengumuman Libur">
             </div>
-            
-            <div class="mb-4">
-                <label class="text-xs text-gray-500 mb-1 block">Judul Label: Cara Mengikuti</label>
-                <input type="text" id="banner-label-caraIkut" class="form-input mb-2" placeholder="Contoh: Syarat & Ketentuan" value="Cara Mengikuti">
-                <label class="text-xs text-gray-500 mb-1 block">Isi Cara Mengikuti (Pisahkan dengan Enter)</label>
-                <textarea id="banner-caraIkut" class="form-input" rows="4" placeholder="1. Lakukan transaksi...&#10;2. Hubungi admin..."></textarea>
+            <div id="schedule-wrapper" class="mb-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Jadwal Mulai (Opsional)</label>
+                        <input type="date" id="banner-scheduleStartDate" class="form-input mb-2">
+                        <input type="time" id="banner-scheduleStartTime" class="form-input">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Jadwal Selesai (Opsional)</label>
+                        <input type="date" id="banner-scheduleEndDate" class="form-input mb-2">
+                        <input type="time" id="banner-scheduleEndTime" class="form-input">
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1">Kosongkan jika ingin tayang selamanya.</p>
             </div>
+            <div id="info-only-fields" class="mb-4 hidden">
+                <label class="text-xs text-gray-500 mb-1 block">Isi Pesan</label>
+                <textarea id="banner-isiPesan" class="form-input" rows="5" placeholder="Tulis isi pesan informasi disini." style="resize: vertical;"></textarea>
+            </div>
+            <div id="promo-only-fields">
+                <div class="mb-4">
+                    <label class="text-xs text-gray-500 mb-1 block">Judul Label: Periode</label>
+                    <input type="text" id="banner-label-periode" class="form-input mb-2" placeholder="Masa Promo" value="Periode">
+                    <label class="text-xs text-gray-500 mb-1 block">Isi Periode</label>
+                    <input type="text" id="banner-periode" class="form-input" placeholder="17 - 31 Agustus 2026">
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs text-gray-500 mb-1 block">Judul Label: Hadiah</label>
+                    <input type="text" id="banner-label-hadiah" class="form-input mb-2" placeholder="Bonus Utama" value="Total Hadiah / Keuntungan">
+                    <label class="text-xs text-gray-500 mb-1 block">Isi Hadiah</label>
+                    <input type="text" id="banner-hadiah" class="form-input" placeholder="Rp 1.7 Miliar">
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs text-gray-500 mb-1 block">Judul Label: Pengumuman</label>
+                    <input type="text" id="banner-label-pengumuman" class="form-input mb-2" placeholder="Tanggal Pengumuman" value="Pemenang / Pengumuman">
+                    <label class="text-xs text-gray-500 mb-1 block">Isi Pengumuman</label>
+                    <input type="text" id="banner-pengumuman" class="form-input" placeholder="7 Orang, 5 September 2026">
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs text-gray-500 mb-1 block">Judul Label: Cara Ikut</label>
+                    <input type="text" id="banner-label-caraIkut" class="form-input mb-2" placeholder="Syarat & Ketentuan" value="Cara Mengikuti">
+                    <label class="text-xs text-gray-500 mb-1 block">Isi Cara Ikut (Pisahkan dengan Enter)</label>
+                    <textarea id="banner-caraIkut" class="form-input" rows="4"></textarea>
+                </div>
+            </div>
+            <div class="mb-4 flex items-center gap-2">
+                <input type="checkbox" id="banner-active" class="w-4 h-4 accent-pk">
+                <label for="banner-active" class="text-sm text-gray-300">Tampilkan di Pelanggan</label>
+            </div>
+            <button onclick="saveBannerChange()" class="btn-pk w-full mt-4">Simpan Banner</button>
+            <button onclick="previewBanner()" class="btn-outline w-full mt-3">Preview Banner</button>
+            <button onclick="closeEditBannerModal()" class="bg-gray-500/10 text-gray-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold">Batal</button>
+            <button onclick="deleteBanner()" id="delete-banner-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Banner</button>
         </div>
-
-        <div class="mb-4 flex items-center gap-2">
-            <input type="checkbox" id="banner-active" class="w-4 h-4 accent-pk">
-            <label for="banner-active" class="text-sm text-gray-300">Tampilkan di Pelanggan</label>
-        </div>
-
-                <button onclick="saveBannerChange()" class="btn-pk w-full mt-4">Simpan Banner</button>
-        <button onclick="previewBanner()" class="btn-outline w-full mt-3">
-            <i class="fa-solid fa-eye mr-2"></i> Preview Banner
-        </button>
-        <button onclick="closeEditBannerModal()" class="bg-gray-500/10 text-gray-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold">Batal</button>
-        <button onclick="deleteBanner()" id="delete-banner-btn" class="bg-red-500/10 text-red-400 w-full mt-3 py-2 rounded-lg text-sm font-semibold hidden">Hapus Banner</button>
     </div>
-</div>
 
     <script>
-        let currentDocId = null;
-        let allOrders = [];
-        let pendingOrderId = null;
-        let isInitialLoadOrders = true;
-        let allBanners = [];
+        let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [];
+        
+        // SCHEMA UNTUK MODAL KATALOG DINAMIS
+        const CATALOG_SCHEMAS = {
+            'katalog_paket_data': { name: 'Paket Data', fields: [{key:'provider',label:'Provider',type:'text'},{key:'duration',label:'Durasi',type:'text'},{key:'quota',label:'Kuota',type:'text'},{key:'price',label:'Harga',type:'number'}] },
+            'katalog_pulsa': { name: 'Pulsa', fields: [{key:'nominal',label:'Nominal',type:'number'},{key:'price',label:'Harga',type:'number'}] },
+            'katalog_token_pln': { name: 'Token PLN', fields: [{key:'nominal',label:'Nominal',type:'number'},{key:'price',label:'Harga',type:'number'}] },
+            'katalog_aksesoris': { name: 'Aksesoris', fields: [{key:'category',label:'Kategori',type:'text'},{key:'name',label:'Nama Item',type:'text'},{key:'price',label:'Harga',type:'number'}] },
+            'katalog_game': { name: 'Topup Game', fields: [{key:'game',label:'Nama Game',type:'text'},{key:'name',label:'Nama Item',type:'text'},{key:'price',label:'Harga',type:'number'}] },
+            'katalog_perdana': { name: 'Perdana', fields: [{key:'provider',label:'Provider',type:'text'},{key:'duration',label:'Durasi',type:'text'},{key:'quota',label:'Kuota',type:'text'},{key:'price',label:'Harga',type:'number'}] },
+            'katalog_gadget': { name: 'Gadget', fields: [{key:'os',label:'OS',type:'text'},{key:'brand',label:'Merk',type:'text'},{key:'model',label:'Tipe',type:'text'}] },
+            'katalog_kendala': { name: 'Kendala Service', fields: [{key:'name',label:'Nama Kendala',type:'text'},{key:'os',label:'OS (Universal/iOS/Android)',type:'text'},{key:'kerusakan',label:'Kerusakan',type:'text'},{key:'gejala',label:'Gejala',type:'text'},{key:'penjelasan',label:'Penjelasan',type:'text'}] }
+        };
+
+        // DATA MIGRASI (HARDCODED DARI PELANGGAN)
+        const MIGRATION_DATA = {
+            katalog_paket_data: [ {provider:"TELKOMSEL",duration:"1 Hari",quota:"7GB",price:11500},{provider:"TELKOMSEL",duration:"5 Hari",quota:"4GB",price:15000},{provider:"TELKOMSEL",duration:"5 Hari",quota:"7GB",price:21000},{provider:"TELKOMSEL",duration:"5 Hari",quota:"9GB",price:25000},{provider:"TELKOMSEL",duration:"7 Hari",quota:"7GB",price:23000},{provider:"TELKOMSEL",duration:"7 Hari",quota:"11GB",price:31000},{provider:"TELKOMSEL",duration:"14 Hari",quota:"5GB",price:25000},{provider:"TELKOMSEL",duration:"14 Hari",quota:"7GB",price:30000},{provider:"TELKOMSEL",duration:"28 Hari",quota:"7GB",price:36000},{provider:"TELKOMSEL",duration:"28 Hari",quota:"10GB",price:44500},{provider:"TELKOMSEL",duration:"28 Hari",quota:"18GB",price:55000},{provider:"TELKOMSEL",duration:"28 Hari",quota:"25GB",price:68000},{provider:"TELKOMSEL",duration:"28 Hari",quota:"42GB",price:95000},{provider:"INDOSAT",duration:"2 Hari",quota:"6GB",price:12000},{provider:"INDOSAT",duration:"3 Hari",quota:"4GB",price:15000},{provider:"INDOSAT",duration:"5 Hari",quota:"6GB",price:17000},{provider:"INDOSAT",duration:"5 Hari",quota:"9GB",price:19000},{provider:"INDOSAT",duration:"7 Hari",quota:"9GB",price:25000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"7GB",price:34000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"16GB",price:47000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"24GB",price:56000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"30GB",price:65000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"65GB",price:92000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"100GB",price:116000},{provider:"INDOSAT",duration:"28 Hari (Reguler)",quota:"150GB",price:140000},{provider:"INDOSAT",duration:"28 Hari (Utama)",quota:"Unli 1 + 4,5GB",price:39000},{provider:"INDOSAT",duration:"28 Hari (Utama)",quota:"Unli 2 + 8GB",price:60000},{provider:"INDOSAT",duration:"28 Hari (Utama)",quota:"Unli 3 + 17GB",price:87000},{provider:"INDOSAT",duration:"28 Hari (Utama)",quota:"Unli 7 + 28GB",price:105000},{provider:"INDOSAT",duration:"28 Hari (Utama)",quota:"Unli 10 + 35GB",price:117000},{provider:"INDOSAT",duration:"28 Hari (Utama)",quota:"Unli 90GB",price:153000},{provider:"XL",duration:"3 Hari",quota:"4GB (S)",price:14000},{provider:"XL",duration:"3 Hari",quota:"6GB (M)",price:20000},{provider:"XL",duration:"5 Hari",quota:"6GB (M)",price:21000},{provider:"XL",duration:"5 Hari",quota:"8GB (L)",price:24000},{provider:"XL",duration:"7 Hari",quota:"3,5GB (S)",price:24000},{provider:"XL",duration:"7 Hari",quota:"6GB (M)",price:26500},{provider:"XL",duration:"7 Hari",quota:"10GB (L)",price:33000},{provider:"XL",duration:"7 Hari",quota:"16GB (XL)",price:39000},{provider:"XL",duration:"28 Hari",quota:"7GB",price:34500},{provider:"XL",duration:"28 Hari",quota:"13GB",price:48000},{provider:"XL",duration:"28 Hari",quota:"19GB",price:57000},{provider:"XL",duration:"28 Hari",quota:"31GB",price:66000},{provider:"XL",duration:"28 Hari",quota:"40GB",price:75000},{provider:"AXIS",duration:"1 Hari",quota:"6GB",price:8500},{provider:"AXIS",duration:"3 Hari",quota:"5GB",price:13500},{provider:"AXIS",duration:"3 Hari",quota:"12,5GB",price:18000},{provider:"AXIS",duration:"5 Hari",quota:"6,5GB",price:16500},{provider:"AXIS",duration:"5 Hari",quota:"16GB",price:25000},{provider:"AXIS",duration:"5 Hari",quota:"24GB",price:29000},{provider:"AXIS",duration:"7 Hari",quota:"3GB",price:16500},{provider:"AXIS",duration:"7 Hari",quota:"10GB",price:26000},{provider:"AXIS",duration:"7 Hari",quota:"17GB",price:31000},{provider:"AXIS",duration:"14 Hari",quota:"5GB",price:25000},{provider:"AXIS",duration:"14 Hari",quota:"8GB",price:30000},{provider:"AXIS",duration:"14 Hari",quota:"25GB",price:47500},{provider:"AXIS",duration:"28 Hari",quota:"7GB",price:34500},{provider:"AXIS",duration:"28 Hari",quota:"10GB",price:39500},{provider:"AXIS",duration:"28 Hari",quota:"16GB",price:48000},{provider:"AXIS",duration:"28 Hari",quota:"26GB",price:62000},{provider:"AXIS",duration:"28 Hari",quota:"40GB",price:75000},{provider:"AXIS",duration:"28 Hari",quota:"150GB",price:145000},{provider:"TRI",duration:"1 Hari",quota:"6GB",price:9000},{provider:"TRI",duration:"2 Hari",quota:"10GB",price:13000},{provider:"TRI",duration:"3 Hari",quota:"3,5GB",price:13500},{provider:"TRI",duration:"3 Hari",quota:"6GB",price:16000},{provider:"TRI",duration:"5 Hari",quota:"10GB",price:20000},{provider:"TRI",duration:"7 Hari",quota:"9GB",price:25000},{provider:"TRI",duration:"28 Hari",quota:"7GB",price:33500},{provider:"TRI",duration:"28 Hari",quota:"10GB",price:39000},{provider:"TRI",duration:"28 Hari",quota:"16GB",price:46500},{provider:"TRI",duration:"28 Hari",quota:"42GB",price:77000},{provider:"TRI",duration:"28 Hari",quota:"100GB",price:122000},{provider:"TRI",duration:"365 Hari (AON)",quota:"6GB",price:33500},{provider:"TRI",duration:"365 Hari (AON)",quota:"9GB",price:48500},{provider:"TRI",duration:"365 Hari (AON)",quota:"12GB",price:60000},{provider:"TRI",duration:"365 Hari (AON)",quota:"40GB",price:111000},{provider:"SMARTFREN",duration:"3 Hari",quota:"4GB",price:11500},{provider:"SMARTFREN",duration:"3 Hari",quota:"Unlimited 1GB",price:17500},{provider:"SMARTFREN",duration:"3 Hari",quota:"Unlimited 2GB",price:22500},{provider:"SMARTFREN",duration:"7 Hari",quota:"2GB",price:12500},{provider:"SMARTFREN",duration:"7 Hari",quota:"6GB",price:18000},{provider:"SMARTFREN",duration:"7 Hari",quota:"Unlimited 1GB",price:21000},{provider:"SMARTFREN",duration:"7 Hari",quota:"Unlimited 2GB",price:26000},{provider:"SMARTFREN",duration:"10 Hari",quota:"2,5GB",price:15000},{provider:"SMARTFREN",duration:"14 Hari",quota:"Unlimited 1GB",price:35000},{provider:"SMARTFREN",duration:"14 Hari",quota:"5GB",price:22500},{provider:"SMARTFREN",duration:"28 Hari",quota:"10GB",price:41000},{provider:"SMARTFREN",duration:"28 Hari",quota:"20GB",price:60000},{provider:"SMARTFREN",duration:"28 Hari",quota:"40GB",price:77000},{provider:"SMARTFREN",duration:"28 Hari",quota:"75GB",price:123000},{provider:"SMARTFREN",duration:"28 Hari",quota:"100GB",price:157000},{provider:"SMARTFREN",duration:"28 Hari",quota:"Unlimited 1GB",price:68000},{provider:"SMARTFREN",duration:"28 Hari",quota:"Unlimited 2GB",price:94000},{provider:"SMARTFREN",duration:"28 Hari",quota:"Unlimited 3GB",price:123000} ],
+            katalog_pulsa: [ {nominal:5000,price:7500},{nominal:10000,price:12500},{nominal:15000,price:17000},{nominal:20000,price:22000},{nominal:25000,price:27000},{nominal:30000,price:32000},{nominal:35000,price:37000},{nominal:40000,price:42000},{nominal:45000,price:47000},{nominal:50000,price:52000},{nominal:55000,price:57000},{nominal:60000,price:62000},{nominal:65000,price:67000},{nominal:70000,price:72000},{nominal:75000,price:77000},{nominal:80000,price:82000},{nominal:85000,price:87000},{nominal:90000,price:92000},{nominal:95000,price:97000},{nominal:100000,price:101000},{nominal:150000,price:151000},{nominal:200000,price:201000} ],
+            katalog_token_pln: [ {nominal:20000,price:23000},{nominal:50000,price:53000},{nominal:100000,price:103000},{nominal:200000,price:203500},{nominal:500000,price:504000},{nominal:1000000,price:1004500} ],
+            katalog_aksesoris: [ {category:"Headset",name:"Makaron",price:7000},{category:"Headset",name:"Jete Eazy Candy",price:10000},{category:"Headset",name:"Jete Classic Series",price:35000},{category:"Headset",name:"Jete Classic II",price:45000},{category:"Headset",name:"Jete Classic II Lightning",price:55000},{category:"Headset",name:"Jete Classic II TypeC",price:55000},{category:"Headset",name:"Jete Souls TypeC",price:100000},{category:"Headset",name:"Jete TWS CE7",price:130000},{category:"Headset",name:"Jete TWS CE6",price:150000},{category:"Kabel Charger",name:"oLike Micro",price:12000},{category:"Kabel Charger",name:"Jete Tiny III Micro",price:12000},{category:"Kabel Charger",name:"Jete Tiny III TypeC",price:15000},{category:"Kabel Charger",name:"Inbox Micro",price:20000},{category:"Kabel Charger",name:"Veger VG18 TypeC",price:23000},{category:"Kabel Charger",name:"Jete Tiny III Lightning",price:25000},{category:"Kabel Charger",name:"Jete CX11 Micro",price:35000},{category:"Kabel Charger",name:"Jete Tiny V Micro",price:35000},{category:"Kabel Charger",name:"Jete CX10 C to C",price:65000},{category:"Kabel Charger",name:"Jete CX13 C to Lightning",price:80000},{category:"Charger Kit",name:"oLike MC02 Micro",price:30000},{category:"Charger Kit",name:"Veger R1 Pro Micro",price:40000},{category:"Charger Kit",name:"Veger C1 TypeC",price:40000},{category:"Charger Kit",name:"Veger R1 Pro TypeC",price:45000},{category:"Charger Kit",name:"Jete C83 C to C",price:70000},{category:"Others",name:"Sandisk FlashDisk 16GB",price:100000},{category:"Others",name:"Jete Powerbank C83",price:130000} ],
+            katalog_game: [ {game:"Call off Duty Mobile (CODM)",name:"50 UC",price:20000},{game:"Call off Duty Mobile (CODM)",name:"100 UC",price:35000},{game:"Call off Duty Mobile (CODM)",name:"150 UC",price:50000},{game:"Call off Duty Mobile (CODM)",name:"200 UC",price:65000},{game:"Call off Duty Mobile (CODM)",name:"300 UC",price:85000},{game:"Call off Duty Mobile (CODM)",name:"500 UC",price:135000},{game:"Call off Duty Mobile (CODM)",name:"750 UC",price:200000},{game:"Free Fire",name:"55 Diamond",price:10000},{game:"Free Fire",name:"100 Diamond",price:15000},{game:"Free Fire",name:"145 Diamond",price:20000},{game:"Free Fire",name:"250 Diamond",price:35000},{game:"Free Fire",name:"355 Diamond",price:50000},{game:"Free Fire",name:"420 Diamond",price:60000},{game:"Free Fire",name:"565 Diamond",price:75000},{game:"Free Fire",name:"790 Diamond",price:100000},{game:"Free Fire",name:"860 Diamond",price:115000},{game:"Free Fire",name:"1000 Diamond",price:130000},{game:"Free Fire",name:"2000 Diamond",price:250000},{game:"Magic Chess: Go Go",name:"28 (25+3) Diamond",price:10000},{game:"Magic Chess: Go Go",name:"59 (53+6) Diamond",price:20000},{game:"Magic Chess: Go Go",name:"112 (102+10) Diamond",price:35000},{game:"Magic Chess: Go Go",name:"170 (154+16) Diamond",price:50000},{game:"Magic Chess: Go Go",name:"223 (203+20) Diamond",price:60000},{game:"Magic Chess: Go Go",name:"296 (256+40) Diamond",price:80000},{game:"Magic Chess: Go Go",name:"408 (367+41) Diamond",price:110000},{game:"Magic Chess: Go Go",name:"570 (504+66) Diamond",price:145000},{game:"Magic Chess: Go Go",name:"875 (774+101) Diamond",price:230000},{game:"Magic Chess: Go Go",name:"1163 (1007+156) Diamond",price:290000},{game:"Mobile Legends: Bang Bang",name:"28 (25+3) Diamond",price:10000},{game:"Mobile Legends: Bang Bang",name:"44 (40+4) Diamond",price:15000},{game:"Mobile Legends: Bang Bang",name:"86 (78+8) Diamond",price:25000},{game:"Mobile Legends: Bang Bang",name:"144 (130+14) Diamond",price:40000},{game:"Mobile Legends: Bang Bang",name:"185 (167+18) Diamond",price:50000},{game:"Mobile Legends: Bang Bang",name:"257 (234+23) Diamond",price:70000},{game:"Mobile Legends: Bang Bang",name:"345 (301+44) Diamond",price:95000},{game:"Mobile Legends: Bang Bang",name:"429 (390+39) Diamond",price:115000},{game:"Mobile Legends: Bang Bang",name:"568 (503+65) Diamond",price:150000},{game:"Mobile Legends: Bang Bang",name:"717 (638+79) Diamond",price:190000},{game:"Mobile Legends: Bang Bang",name:"963 (859+104) Diamond",price:250000},{game:"Mobile Legends: Bang Bang",name:"1139 (1013+126) Diamond",price:300000},{game:"Point Blank Zepetto",name:"1200 Cash",price:15000},{game:"Point Blank Zepetto",name:"2400 Cash",price:25000},{game:"Point Blank Zepetto",name:"6000 Cash",price:50000},{game:"Point Blank Zepetto",name:"12000 Cash",price:100000},{game:"Point Blank Zepetto",name:"36000 Cash",price:270000},{game:"PUBG Mobile",name:"50 UC",price:20000},{game:"PUBG Mobile",name:"100 UC",price:35000},{game:"PUBG Mobile",name:"150 UC",price:50000},{game:"PUBG Mobile",name:"200 UC",price:65000},{game:"PUBG Mobile",name:"375 UC",price:100000},{game:"PUBG Mobile",name:"500 UC",price:135000},{game:"PUBG Mobile",name:"750 UC",price:195000},{game:"PUBG Mobile",name:"1100 UC",price:275000} ],
+            katalog_perdana: [ {provider:"AXIS",duration:"30 Hari",quota:"3GB",price:20000},{provider:"AXIS",duration:"30 Hari",quota:"7GB",price:30000},{provider:"AXIS",duration:"30 Hari",quota:"10GB",price:35000},{provider:"BYU",duration:"30 Hari",quota:"3GB",price:25000},{provider:"INDOSAT",duration:"30 Hari",quota:"3GB",price:20000},{provider:"SMARTFREN",duration:"14 Hari",quota:"Unlimited 1GB",price:27000},{provider:"SMARTFREN",duration:"28 Hari",quota:"Unlimited 1GB",price:50000},{provider:"SMARTFREN",duration:"28 Hari",quota:"3GB",price:20000},{provider:"SMARTFREN",duration:"28 Hari",quota:"7GB",price:27000},{provider:"TELKOMSEL",duration:"30 Hari",quota:"3GB",price:35000},{provider:"TELKOMSEL",duration:"30 Hari",quota:"7GB",price:40000},{provider:"TRI",duration:"30 Hari",quota:"3GB",price:25000},{provider:"XL",duration:"30 Hari",quota:"3GB",price:20000},{provider:"XL",duration:"30 Hari",quota:"10GB",price:34000},{provider:"XL",duration:"30 Hari",quota:"23GB",price:47000} ],
+            katalog_gadget: [ {os:"Android",brand:"Samsung",model:"Galaxy A3"},{os:"Android",brand:"Samsung",model:"Galaxy A5"},{os:"Android",brand:"Samsung",model:"Galaxy A6"},{os:"Android",brand:"Samsung",model:"Galaxy A6+"},{os:"Android",brand:"Samsung",model:"Galaxy A7"},{os:"Android",brand:"Samsung",model:"Galaxy A8"},{os:"Android",brand:"Samsung",model:"Galaxy A8+"},{os:"Android",brand:"Samsung",model:"Galaxy A8 Star"},{os:"Android",brand:"Samsung",model:"Galaxy A9"},{os:"Android",brand:"Samsung",model:"Galaxy A9 Pro"},{os:"Android",brand:"Samsung",model:"Galaxy A01"},{os:"Android",brand:"Samsung",model:"Galaxy A01 Core"},{os:"Android",brand:"Samsung",model:"Galaxy A02"},{os:"Android",brand:"Samsung",model:"Galaxy A02s"},{os:"Android",brand:"Samsung",model:"Galaxy A03"},{os:"Android",brand:"Samsung",model:"Galaxy A03 Core"},{os:"Android",brand:"Samsung",model:"Galaxy A03s"},{os:"Android",brand:"Samsung",model:"Galaxy A04"},{os:"Android",brand:"Samsung",model:"Galaxy A04e"},{os:"Android",brand:"Samsung",model:"Galaxy A04s"},{os:"Android",brand:"Samsung",model:"Galaxy A05"},{os:"Android",brand:"Samsung",model:"Galaxy A05s"},{os:"Android",brand:"Samsung",model:"Galaxy A06"},{os:"Android",brand:"Samsung",model:"Galaxy A10"},{os:"Android",brand:"Samsung",model:"Galaxy A10e"},{os:"Android",brand:"Samsung",model:"Galaxy A10s"},{os:"Android",brand:"Samsung",model:"Galaxy A11"},{os:"Android",brand:"Samsung",model:"Galaxy A12"},{os:"Android",brand:"Samsung",model:"Galaxy A12 Nacho"},{os:"Android",brand:"Samsung",model:"Galaxy A13"},{os:"Android",brand:"Samsung",model:"Galaxy A14"},{os:"Android",brand:"Samsung",model:"Galaxy A15"},{os:"Android",brand:"Samsung",model:"Galaxy A16"},{os:"Android",brand:"Samsung",model:"Galaxy A20"},{os:"Android",brand:"Samsung",model:"Galaxy A20e"},{os:"Android",brand:"Samsung",model:"Galaxy A20s"},{os:"Android",brand:"Samsung",model:"Galaxy A21"},{os:"Android",brand:"Samsung",model:"Galaxy A21s"},{os:"Android",brand:"Samsung",model:"Galaxy A22"},{os:"Android",brand:"Samsung",model:"Galaxy A23"},{os:"Android",brand:"Samsung",model:"Galaxy A24"},{os:"Android",brand:"Samsung",model:"Galaxy A25"},{os:"Android",brand:"Samsung",model:"Galaxy A26"},{os:"Android",brand:"Samsung",model:"Galaxy A30"},{os:"Android",brand:"Samsung",model:"Galaxy A30s"},{os:"Android",brand:"Samsung",model:"Galaxy A31"},{os:"Android",brand:"Samsung",model:"Galaxy A36"},{os:"Android",brand:"Samsung",model:"Galaxy A35"},{os:"Android",brand:"Samsung",model:"Galaxy A55"},{os:"Android",brand:"Samsung",model:"Galaxy A32"},{os:"Android",brand:"Samsung",model:"Galaxy A33"},{os:"Android",brand:"Samsung",model:"Galaxy A34"},{os:"Android",brand:"Samsung",model:"Galaxy A40"},{os:"Android",brand:"Samsung",model:"Galaxy A41"},{os:"Android",brand:"Samsung",model:"Galaxy A42"},{os:"Android",brand:"Samsung",model:"Galaxy A50"},{os:"Android",brand:"Samsung",model:"Galaxy A50s"},{os:"Android",brand:"Samsung",model:"Galaxy A51"},{os:"Android",brand:"Samsung",model:"Galaxy A52"},{os:"Android",brand:"Samsung",model:"Galaxy A52s"},{os:"Android",brand:"Samsung",model:"Galaxy A53"},{os:"Android",brand:"Samsung",model:"Galaxy A54"},{os:"Android",brand:"Samsung",model:"Galaxy A55"},{os:"Android",brand:"Samsung",model:"Galaxy A56"},{os:"Android",brand:"Samsung",model:"Galaxy A70"},{os:"Android",brand:"Samsung",model:"Galaxy A70s"},{os:"Android",brand:"Samsung",model:"Galaxy A71"},{os:"Android",brand:"Samsung",model:"Galaxy A72"},{os:"Android",brand:"Samsung",model:"Galaxy A73"},{os:"Android",brand:"Samsung",model:"Galaxy A80"},{os:"Android",brand:"Samsung",model:"Galaxy A90"},{os:"Android",brand:"Samsung",model:"Galaxy J1"},{os:"Android",brand:"Samsung",model:"Galaxy J1 Ace"},{os:"Android",brand:"Samsung",model:"Galaxy J2"},{os:"Android",brand:"Samsung",model:"Galaxy J2 Prime"},{os:"Android",brand:"Samsung",model:"Galaxy J2 Pro"},{os:"Android",brand:"Samsung",model:"Galaxy J3"},{os:"Android",brand:"Samsung",model:"Galaxy J3 Pro"},{os:"Android",brand:"Samsung",model:"Galaxy J4"},{os:"Android",brand:"Samsung",model:"Galaxy J4+"},{os:"Android",brand:"Samsung",model:"Galaxy J5"},{os:"Android",brand:"Samsung",model:"Galaxy J5 Prime"},{os:"Android",brand:"Samsung",model:"Galaxy J5 Pro"},{os:"Android",brand:"Samsung",model:"Galaxy J6"},{os:"Android",brand:"Samsung",model:"Galaxy J6+"},{os:"Android",brand:"Samsung",model:"Galaxy J7"},{os:"Android",brand:"Samsung",model:"Galaxy J7 Prime"},{os:"Android",brand:"Samsung",model:"Galaxy J7 Pro"},{os:"Android",brand:"Samsung",model:"Galaxy J8"},{os:"Android",brand:"Samsung",model:"Galaxy M01"},{os:"Android",brand:"Samsung",model:"Galaxy M01 Core"},{os:"Android",brand:"Samsung",model:"Galaxy M01s"},{os:"Android",brand:"Samsung",model:"Galaxy M02"},{os:"Android",brand:"Samsung",model:"Galaxy M02s"},{os:"Android",brand:"Samsung",model:"Galaxy M04"},{os:"Android",brand:"Samsung",model:"Galaxy M05"},{os:"Android",brand:"Samsung",model:"Galaxy M10"},{os:"Android",brand:"Samsung",model:"Galaxy M10s"},{os:"Android",brand:"Samsung",model:"Galaxy M11"},{os:"Android",brand:"Samsung",model:"Galaxy M12"},{os:"Android",brand:"Samsung",model:"Galaxy M13"},{os:"Android",brand:"Samsung",model:"Galaxy M14"},{os:"Android",brand:"Samsung",model:"Galaxy M15"},{os:"Android",brand:"Samsung",model:"Galaxy M16"},{os:"Android",brand:"Samsung",model:"Galaxy M20"},{os:"Android",brand:"Samsung",model:"Galaxy M21"},{os:"Android",brand:"Samsung",model:"Galaxy M21s"},{os:"Android",brand:"Samsung",model:"Galaxy M22"},{os:"Android",brand:"Samsung",model:"Galaxy M23"},{os:"Android",brand:"Samsung",model:"Galaxy M25"},{os:"Android",brand:"Samsung",model:"Galaxy M30"},{os:"Android",brand:"Samsung",model:"Galaxy M30s"},{os:"Android",brand:"Samsung",model:"Galaxy M31"},{os:"Android",brand:"Samsung",model:"Galaxy M31s"},{os:"Android",brand:"Samsung",model:"Galaxy M32"},{os:"Android",brand:"Samsung",model:"Galaxy M33"},{os:"Android",brand:"Samsung",model:"Galaxy M34"},{os:"Android",brand:"Samsung",model:"Galaxy M35"},{os:"Android",brand:"Samsung",model:"Galaxy M36"},{os:"Android",brand:"Samsung",model:"Galaxy M40"},{os:"Android",brand:"Samsung",model:"Galaxy M42"},{os:"Android",brand:"Samsung",model:"Galaxy M51"},{os:"Android",brand:"Samsung",model:"Galaxy M52"},{os:"Android",brand:"Samsung",model:"Galaxy M53"},{os:"Android",brand:"Samsung",model:"Galaxy M54"},{os:"Android",brand:"Samsung",model:"Galaxy M55"},{os:"Android",brand:"Samsung",model:"Galaxy M55s"},{os:"Android",brand:"Samsung",model:"Galaxy M56"},{os:"Android",brand:"Samsung",model:"Galaxy M62"},{os:"Android",brand:"Samsung",model:"Galaxy S20"},{os:"Android",brand:"Samsung",model:"Galaxy S20 FE"},{os:"Android",brand:"Samsung",model:"Galaxy S21"},{os:"Android",brand:"Samsung",model:"Galaxy S21 FE"},{os:"Android",brand:"Samsung",model:"Galaxy S22"},{os:"Android",brand:"Samsung",model:"Galaxy S23"},{os:"Android",brand:"Samsung",model:"Galaxy S23 FE"},{os:"Android",brand:"Samsung",model:"Galaxy S24"},{os:"Android",brand:"Samsung",model:"Galaxy S"},{os:"Android",brand:"Samsung",model:"Galaxy S Advance"},{os:"Android",brand:"Samsung",model:"Galaxy S2"},{os:"Android",brand:"Samsung",model:"Galaxy S3"},{os:"Android",brand:"Samsung",model:"Galaxy S3 Mini"},{os:"Android",brand:"Samsung",model:"Galaxy S4"},{os:"Android",brand:"Samsung",model:"Galaxy S4 Mini"},{os:"Android",brand:"Samsung",model:"Galaxy S4 Zoom"},{os:"Android",brand:"Samsung",model:"Galaxy S5"},{os:"Android",brand:"Samsung",model:"Galaxy S5 Mini"},{os:"Android",brand:"Samsung",model:"Galaxy S5 Active"},{os:"Android",brand:"Samsung",model:"Galaxy S6"},{os:"Android",brand:"Samsung",model:"Galaxy S6 Edge"},{os:"Android",brand:"Samsung",model:"Galaxy S6 Edge+"},{os:"Android",brand:"Samsung",model:"Galaxy S7"},{os:"Android",brand:"Samsung",model:"Galaxy S7 Edge"},{os:"Android",brand:"Samsung",model:"Galaxy S7 Active"},{os:"Android",brand:"Samsung",model:"Galaxy S8"},{os:"Android",brand:"Samsung",model:"Galaxy S8+"},{os:"Android",brand:"Samsung",model:"Galaxy S8 Active"},{os:"Android",brand:"Samsung",model:"Galaxy S9"},{os:"Android",brand:"Samsung",model:"Galaxy S9+"},{os:"Android",brand:"Samsung",model:"Galaxy S10"},{os:"Android",brand:"Samsung",model:"Galaxy S10e"},{os:"Android",brand:"Samsung",model:"Galaxy S10+"},{os:"Android",brand:"Samsung",model:"Galaxy S10 Lite"},{os:"Android",brand:"Samsung",model:"Galaxy S20"},{os:"Android",brand:"Samsung",model:"Galaxy S20+"},{os:"Android",brand:"Samsung",model:"Galaxy S20 Ultra"},{os:"Android",brand:"Samsung",model:"Galaxy S21"},{os:"Android",brand:"Samsung",model:"Galaxy S21+"},{os:"Android",brand:"Samsung",model:"Galaxy S21 Ultra"},{os:"Android",brand:"Samsung",model:"Galaxy S22"},{os:"Android",brand:"Samsung",model:"Galaxy S2+"},{os:"Android",brand:"Samsung",model:"Galaxy S22 Ultra"},{os:"Android",brand:"Samsung",model:"Galaxy S23"},{os:"Android",brand:"Samsung",model:"Galaxy S23+"},{os:"Android",brand:"Samsung",model:"Galaxy S23 Ultra"},{os:"Android",brand:"Samsung",model:"Galaxy S24"},{os:"Android",brand:"Samsung",model:"Galaxy S24+"},{os:"Android",brand:"Samsung",model:"Galaxy S24 FE"},{os:"Android",brand:"Samsung",model:"Galaxy Note"},{os:"Android",brand:"Samsung",model:"Galaxy Note 2"},{os:"Android",brand:"Samsung",model:"Galaxy Note 3"},{os:"Android",brand:"Samsung",model:"Galaxy Note 4"},{os:"Android",brand:"Samsung",model:"Galaxy Note 4 Edge"},{os:"Android",brand:"Samsung",model:"Galaxy Note 5"},{os:"Android",brand:"Samsung",model:"Galaxy Note 7"},{os:"Android",brand:"Samsung",model:"Galaxy Note FE"},{os:"Android",brand:"Samsung",model:"Galaxy Note 8"},{os:"Android",brand:"Samsung",model:"Galaxy Note 9"},{os:"Android",brand:"Samsung",model:"Galaxy Note 10"},{os:"Android",brand:"Samsung",model:"Galaxy Note 10+"},{os:"Android",brand:"Samsung",model:"Galaxy Note 10 Lite"},{os:"Android",brand:"Samsung",model:"Galaxy Note 20"},{os:"Android",brand:"Samsung",model:"Galaxy Note 20 Ultra"},{os:"Android",brand:"Samsung",model:"Galaxy Z Flip"},{os:"Android",brand:"Samsung",model:"Galaxy Z Flip 3"},{os:"Android",brand:"Samsung",model:"Galaxy Z Flip 4"},{os:"Android",brand:"Samsung",model:"Galaxy Z Flip 5"},{os:"Android",brand:"Samsung",model:"Galaxy Z Flip 6"},{os:"Android",brand:"Samsung",model:"Galaxy Z Flip 7"},{os:"Android",brand:"Samsung",model:"Galaxy Z Fold 2"},{os:"Android",brand:"Samsung",model:"Galaxy Z Fold 3"},{os:"Android",brand:"Samsung",model:"Galaxy Z Fold 4"},{os:"Android",brand:"Samsung",model:"Galaxy Z Fold 5"},{os:"Android",brand:"Samsung",model:"Galaxy Z Fold 6"},{os:"Android",brand:"Samsung",model:"Galaxy Z Fold 7"},{os:"Android",brand:"Xiaomi",model:"Redmi 4A"},{os:"Android",brand:"Xiaomi",model:"Redmi 5A"},{os:"Android",brand:"Xiaomi",model:"Redmi 6A"},{os:"Android",brand:"Xiaomi",model:"Redmi 7A"},{os:"Android",brand:"Xiaomi",model:"Redmi 8A"},{os:"Android",brand:"Xiaomi",model:"Redmi 8A Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi 9A"},{os:"Android",brand:"Xiaomi",model:"Redmi 9i"},{os:"Android",brand:"Xiaomi",model:"Redmi 10A"},{os:"Android",brand:"Xiaomi",model:"Redmi A1"},{os:"Android",brand:"Xiaomi",model:"Redmi A2"},{os:"Android",brand:"Xiaomi",model:"Redmi A3"},{os:"Android",brand:"Xiaomi",model:"Redmi A4"},{os:"Android",brand:"Xiaomi",model:"Redmi 12C"},{os:"Android",brand:"Xiaomi",model:"Redmi 13C"},{os:"Android",brand:"Xiaomi",model:"Redmi 14C"},{os:"Android",brand:"Xiaomi",model:"Redmi Note"},{os:"Android",brand:"Xiaomi",model:"Redmi Note Prime"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 2"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 3"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 4"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 4X"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 5"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 5A"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 5 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 6 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 7"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 7 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 8"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 8T"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 8 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 9"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 9T"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 9s"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 9 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 9 Pro Max"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 10"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 10JE"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 10s"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 10 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 10 Pro Max"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11E"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11T"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11R"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11s"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 11 Pro+"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 12"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 12R"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 12s"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 12R Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 12 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 12 Pro+"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 13"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 13R"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 13R Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 13 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 13 Pro+"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 14"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 14 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 14 Pro+"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 15"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 15 Pro"},{os:"Android",brand:"Xiaomi",model:"Redmi Note 15 Pro+"},{os:"Android",brand:"Xiaomi",model:"Poco C3"},{os:"Android",brand:"Xiaomi",model:"Poco C31"},{os:"Android",brand:"Xiaomi",model:"Poco C40"},{os:"Android",brand:"Xiaomi",model:"Poco C50"},{os:"Android",brand:"Xiaomi",model:"Poco C51"},{os:"Android",brand:"Xiaomi",model:"Poco C55"},{os:"Android",brand:"Xiaomi",model:"Poco C61"},{os:"Android",brand:"Xiaomi",model:"Poco C65"},{os:"Android",brand:"Xiaomi",model:"Poco C75"},{os:"Android",brand:"Xiaomi",model:"Poco M2"},{os:"Android",brand:"Xiaomi",model:"Poco M2 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco M3"},{os:"Android",brand:"Xiaomi",model:"Poco M3 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco M4"},{os:"Android",brand:"Xiaomi",model:"Poco M4 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco M5"},{os:"Android",brand:"Xiaomi",model:"Poco M5s"},{os:"Android",brand:"Xiaomi",model:"Poco M6"},{os:"Android",brand:"Xiaomi",model:"Poco M6+"},{os:"Android",brand:"Xiaomi",model:"Poco M6 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco M7"},{os:"Android",brand:"Xiaomi",model:"Poco M7 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco X2"},{os:"Android",brand:"Xiaomi",model:"Poco X3"},{os:"Android",brand:"Xiaomi",model:"Poco X3 GT"},{os:"Android",brand:"Xiaomi",model:"Poco X4"},{os:"Android",brand:"Xiaomi",model:"Poco X4 GT"},{os:"Android",brand:"Xiaomi",model:"Poco X4 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco X5"},{os:"Android",brand:"Xiaomi",model:"Poco X5 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco X6"},{os:"Android",brand:"Xiaomi",model:"Poco X6 Neo"},{os:"Android",brand:"Xiaomi",model:"Poco X6 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco X7"},{os:"Android",brand:"Xiaomi",model:"Poco X7 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco F1"},{os:"Android",brand:"Xiaomi",model:"Poco F2"},{os:"Android",brand:"Xiaomi",model:"Poco F3"},{os:"Android",brand:"Xiaomi",model:"Poco F3 GT"},{os:"Android",brand:"Xiaomi",model:"Poco F4"},{os:"Android",brand:"Xiaomi",model:"Poco F4 GT"},{os:"Android",brand:"Xiaomi",model:"Poco F5"},{os:"Android",brand:"Xiaomi",model:"Poco F5 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco F6"},{os:"Android",brand:"Xiaomi",model:"Poco F6 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco F7"},{os:"Android",brand:"Xiaomi",model:"Poco F7 Pro"},{os:"Android",brand:"Xiaomi",model:"Poco F7 Ultra"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 6"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 6X"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 8"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 8 Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 8 SE"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 8 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 9"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 9 Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 9T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 9 SE"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 9T Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 9 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10i"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10 Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10T Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10T Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 10 Ultra"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11i"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11X"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11 Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11 Lite NE"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 11 Ultra"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12X"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12s"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12 Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 12 Ultra"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 13"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 13 Lite"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 13T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 13T Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 13 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 13 Ultra"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 14"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 14 Civi"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 14T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 14T Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 14 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 14 Ultra"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 15"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 15T"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 15T Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 15 Pro"},{os:"Android",brand:"Xiaomi",model:"Xiaomi 15 Ultra"},{os:"Android",brand:"Xiaomi",model:"Mi MIX"},{os:"Android",brand:"Xiaomi",model:"Mi MIX 2"},{os:"Android",brand:"Xiaomi",model:"Mi MIX 2s"},{os:"Android",brand:"Xiaomi",model:"Mi MIX 3"},{os:"Android",brand:"Xiaomi",model:"Mi MIX Alpha"},{os:"Android",brand:"Xiaomi",model:"Mi MIX 4"},{os:"Android",brand:"Xiaomi",model:"MIX Fold"},{os:"Android",brand:"Xiaomi",model:"MIX Fold 2"},{os:"Android",brand:"Xiaomi",model:"MIX Fold 3"},{os:"Android",brand:"Xiaomi",model:"MIX Fold 4"},{os:"Android",brand:"Xiaomi",model:"MIX Flip"},{os:"Android",brand:"Xiaomi",model:"Black Shark"},{os:"Android",brand:"Xiaomi",model:"Black Shark Helo"},{os:"Android",brand:"Xiaomi",model:"Black Shark 2"},{os:"Android",brand:"Xiaomi",model:"Black Shark 2 Pro"},{os:"Android",brand:"Xiaomi",model:"Black Shark 3"},{os:"Android",brand:"Xiaomi",model:"Black Shark 3s"},{os:"Android",brand:"Xiaomi",model:"Black Shark 3 Pro"},{os:"Android",brand:"Xiaomi",model:"Black Shark 4"},{os:"Android",brand:"Xiaomi",model:"Black Shark 4s"},{os:"Android",brand:"Xiaomi",model:"Black Shark 4 Pro"},{os:"Android",brand:"Xiaomi",model:"Black Shark 4s Pro"},{os:"Android",brand:"Xiaomi",model:"Black Shark 5"},{os:"Android",brand:"Xiaomi",model:"Black Shark 5 Pro"},{os:"Android",brand:"Xiaomi",model:"Black Shark 6"},{os:"Android",brand:"Xiaomi",model:"Black Shark 6 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Plus"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Lite"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 2"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 2i"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 2s"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 2 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 2+"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 3"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 3i"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 3E"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 4"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 4E"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 5"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 5i"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 5T"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 5Z"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 5i Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 5 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 6"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 6 SE"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 7"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 7 SE"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 7i"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 8"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 8 SE"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 8i"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 8 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 9"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 9 SE"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 9 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 10"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 10 SE"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 10 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 10 Youth"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 11"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 11i"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 11 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 11 Ultra"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 12"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 12 Ultra"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 12 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 12s"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 12 SE"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 12 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 13"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 13 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Nova 13 Ultra"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y60"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y61"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y70"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y70+"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y71"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y72"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y90"},{os:"HarmonyOS",brand:"Huawei",model:"Nova Y91"},{os:"HarmonyOS",brand:"Huawei",model:"P1 Ascend"},{os:"HarmonyOS",brand:"Huawei",model:"P2 Ascend"},{os:"HarmonyOS",brand:"Huawei",model:"P6 Ascend"},{os:"HarmonyOS",brand:"Huawei",model:"P7 Ascend"},{os:"HarmonyOS",brand:"Huawei",model:"P8"},{os:"HarmonyOS",brand:"Huawei",model:"P8 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"P8 Max"},{os:"HarmonyOS",brand:"Huawei",model:"P9"},{os:"HarmonyOS",brand:"Huawei",model:"P9+"},{os:"HarmonyOS",brand:"Huawei",model:"P9 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"P9 Lite Mini"},{os:"HarmonyOS",brand:"Huawei",model:"P10"},{os:"HarmonyOS",brand:"Huawei",model:"P10+"},{os:"HarmonyOS",brand:"Huawei",model:"P10 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"P20"},{os:"HarmonyOS",brand:"Huawei",model:"P20 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"P20 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"P30"},{os:"HarmonyOS",brand:"Huawei",model:"P30 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"P30 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"P40"},{os:"HarmonyOS",brand:"Huawei",model:"P40 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"P40 Lite E"},{os:"HarmonyOS",brand:"Huawei",model:"P40 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"P40 Pro+"},{os:"HarmonyOS",brand:"Huawei",model:"P50"},{os:"HarmonyOS",brand:"Huawei",model:"P50 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"P50E"},{os:"HarmonyOS",brand:"Huawei",model:"P50 Lite E"},{os:"HarmonyOS",brand:"Huawei",model:"P50 Pocket"},{os:"HarmonyOS",brand:"Huawei",model:"P60"},{os:"HarmonyOS",brand:"Huawei",model:"P60 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"P60 Art"},{os:"HarmonyOS",brand:"Huawei",model:"Pura 70"},{os:"HarmonyOS",brand:"Huawei",model:"Pura 70 Pro+"},{os:"HarmonyOS",brand:"Huawei",model:"Pura 70 Ultra"},{os:"HarmonyOS",brand:"Huawei",model:"Pura 80"},{os:"HarmonyOS",brand:"Huawei",model:"Pura 80 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Pura 80 Ultra"},{os:"HarmonyOS",brand:"Huawei",model:"Mate Ascend"},{os:"HarmonyOS",brand:"Huawei",model:"Mate Ascend 2"},{os:"HarmonyOS",brand:"Huawei",model:"Mate Ascend 7"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 8"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 9"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 9 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 9 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 10"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 10 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 10 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 20"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 20x"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 20 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 20 RS"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 30"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 30 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 30E Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 40"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 40 Pro"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 40 Pro+"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 40 Lite"},{os:"HarmonyOS",brand:"Huawei",model:"Mate 40 RS"},{os:"HarmonyOS",brand:"Huawei",model:"Mate X"},{os:"HarmonyOS",brand:"Huawei",model:"Mate XS"},{os:"HarmonyOS",brand:"Huawei",model:"Mate X2"},{os:"HarmonyOS",brand:"Huawei",model:"Mate XS 2"},{os:"HarmonyOS",brand:"Huawei",model:"Mate X3"},{os:"HarmonyOS",brand:"Huawei",model:"Mate X5"},{os:"HarmonyOS",brand:"Huawei",model:"Mate XT"},{os:"iOS",brand:"Apple",model:"iPhone SE Gen-1"},{os:"iOS",brand:"Apple",model:"iPhone SE Gen-2"},{os:"iOS",brand:"Apple",model:"iPhone SE Gen-3"},{os:"iOS",brand:"Apple",model:"iPhone SE Gen-4"},{os:"iOS",brand:"Apple",model:"iPhone 5"},{os:"iOS",brand:"Apple",model:"iPhone 5C"},{os:"iOS",brand:"Apple",model:"iPhone 5s"},{os:"iOS",brand:"Apple",model:"iPhone 6"},{os:"iOS",brand:"Apple",model:"iPhone 6 Plus"},{os:"iOS",brand:"Apple",model:"iPhone 6s"},{os:"iOS",brand:"Apple",model:"iPhone 6s Plus"},{os:"iOS",brand:"Apple",model:"iPhone 7"},{os:"iOS",brand:"Apple",model:"iPhone 7 Plus"},{os:"iOS",brand:"Apple",model:"iPhone 8"},{os:"iOS",brand:"Apple",model:"iPhone 8 Plus"},{os:"iOS",brand:"Apple",model:"iPhone X"},{os:"iOS",brand:"Apple",model:"iPhone XR"},{os:"iOS",brand:"Apple",model:"iPhone XS"},{os:"iOS",brand:"Apple",model:"iPhone XS Max"},{os:"iOS",brand:"Apple",model:"iPhone 11"},{os:"iOS",brand:"Apple",model:"iPhone 11 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 11 Pro Max"},{os:"iOS",brand:"Apple",model:"iPhone 12 Mini"},{os:"iOS",brand:"Apple",model:"iPhone 12"},{os:"iOS",brand:"Apple",model:"iPhone 12 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 12 Pro Max"},{os:"iOS",brand:"Apple",model:"iPhone 13 Mini"},{os:"iOS",brand:"Apple",model:"iPhone 13"},{os:"iOS",brand:"Apple",model:"iPhone 13 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 13 Pro Max"},{os:"iOS",brand:"Apple",model:"iPhone 14"},{os:"iOS",brand:"Apple",model:"iPhone 14 Plus"},{os:"iOS",brand:"Apple",model:"iPhone 14 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 14 Pro Max"},{os:"iOS",brand:"Apple",model:"iPhone 15"},{os:"iOS",brand:"Apple",model:"iPhone 15 Plus"},{os:"iOS",brand:"Apple",model:"iPhone 15 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 15 Pro Max"},{os:"iOS",brand:"Apple",model:"iPhone 16"},{os:"iOS",brand:"Apple",model:"iPhone 16 Plus"},{os:"iOS",brand:"Apple",model:"iPhone 16 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 16 Pro Max"},{os:"iOS",brand:"Apple",model:"iPhone 17"},{os:"iOS",brand:"Apple",model:"iPhone 17 Air"},{os:"iOS",brand:"Apple",model:"iPhone 17 Pro"},{os:"iOS",brand:"Apple",model:"iPhone 17 Pro Max"} ],
+            katalog_kendala: [ {name:"Perbaikan Layar (LCD / OLED)",os:"Universal",kerusakan:"Replacement Display Assembly",gejala:"Layar pecah, retak, bergaris.",penjelasan:"Penggantian satu set layar baru."}, {name:"Perbaikan Baterai",os:"Universal",kerusakan:"Battery Replacement",gejala:"Baterai cepat habis, kembung.",penjelasan:"Penggantian baterai lama dengan baru."}, {name:"Sinyal Hilang / Blokir IMEI Pada iPhone",os:"iOS",kerusakan:"Temporary Signal Unblock",gejala:"iPhone ex-inter terblokir sinyal.",penjelasan:"Pemulihan akses sinyal sementara."}, {name:"Lainnya",os:"Universal",kerusakan:"Custom",gejala:"Custom",penjelasan:"Custom"} ]
+        };
 
         function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
-        // --- AUTO REFRESH PWA ADMIN ---
-const BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit (Berpindah aplikasi di HP/Desktop)
-const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000; // 2 menit (Diam menatap layar di Desktop)
-
-// Deteksi perangkat (Mobile dikecualikan dari aturan idle 2 menit)
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-let hiddenTime = null;
-let lastInteractionTime = Date.now();
-
-// 1. Catat setiap kali Admin menggerakkan mouse, mengetik, atau mengklik
-['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(eventName => {
-    document.addEventListener(eventName, () => {
-        lastInteractionTime = Date.now();
-    }, { passive: true });
-});
-
-// 2. Fungsi untuk mencatat waktu saat aplikasi kehilangan fokus
-function handleAppHide() {
-    if (hiddenTime === null) {
-        hiddenTime = Date.now();
-    }
-}
-
-// 3. Fungsi untuk mengecek waktu saat aplikasi kembali aktif
-function handleAppShow() {
-    if (hiddenTime !== null) {
-        const timeAway = Date.now() - hiddenTime;
-        if (timeAway >= BACKGROUND_LIMIT) {
-            console.log('Kembali dari background (25 menit), merefresh data...');
-            window.location.reload();
-        }
-        hiddenTime = null;
-    }
-    lastInteractionTime = Date.now(); // Reset timer idle
-}
-
-// Mendengarkan perubahan visibility (Standar Web)
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') handleAppHide();
-    else handleAppShow();
-});
-
-// Mendengarkan focus/blur (Cadangan khusus untuk Android PWA Standalone)
-window.addEventListener('blur', handleAppHide);
-window.addEventListener('focus', handleAppShow);
-
-// 4. Fungsi Khusus Desktop: Cek idle (Admin menatap layar tanpa sentuh mouse/keyboard)
-setInterval(() => {
-    if (isMobile) return; // <-- Hanya berjalan di Desktop
-
-    // Jangan refresh jika Admin sedang membuka form Edit
-    const isEditing = !document.getElementById('edit-banner-modal').classList.contains('hidden') || 
-                       !document.getElementById('edit-modal').classList.contains('hidden');
-    
-    if (isEditing) {
-        lastInteractionTime = Date.now();
-        return;
-    }
-
-    const idleTime = Date.now() - lastInteractionTime;
-
-    if (idleTime >= DESKTOP_IDLE_LIMIT) {
-        console.log('Desktop idle 2 menit tercapai, merefresh data transaksi...');
-        window.location.reload();
-    }
-}, 5000); // Cek status idle setiap 5 detik
-// --- AKHIR KODE AUTO REFRESH ---
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
         window.addEventListener('firebase-admin-ready', function() {
@@ -596,7 +571,7 @@ setInterval(() => {
                 })
                 .catch(err => {
                     hideLoading();
-                    let msg = "Terjadi error. Cek console (F12).";
+                    let msg = "Terjadi error.";
                     if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar.";
                     else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
                     else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
@@ -606,8 +581,6 @@ setInterval(() => {
         }
 
         function adminLogout() {
-            document.getElementById('admin-email').value = '';
-            document.getElementById('admin-pass').value = '';
             window.firebaseAdmin.signOut(window.firebaseAdmin.auth);
         }
 
@@ -727,7 +700,7 @@ setInterval(() => {
                             </div>
                             ${idPels !== '' ? `
                             <div class="mt-2 pt-2 border-t border-[#222]">
-                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter)</label>
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan</label>
                                 <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="3" style="resize: vertical;">${idPels}</textarea>
                             </div>` : ''}
                         </div>`;
@@ -774,58 +747,27 @@ setInterval(() => {
                 await updateDoc(doc(db, "Riwayat_Pesanan", currentDocId), updatedData);
                 showToast("Data transaksi berhasil diperbarui!");
                 closeEditModal();
-            } catch (err) { alert("Gagal menyimpan data. Mohon cek kembali isian form."); }
+            } catch (err) { alert("Gagal menyimpan data."); }
         }
 
-                function switchTab(tabName) {
-            if (tabName === 'orders') {
-                document.getElementById('view-orders').classList.remove('hidden');
-                document.getElementById('view-users').classList.add('hidden');
-                document.getElementById('view-banners').classList.add('hidden');
-                document.getElementById('view-promos').classList.add('hidden');
-                document.getElementById('tab-orders').className = 'btn-pk text-sm';
-                document.getElementById('tab-users').className = 'btn-outline text-sm';
-                document.getElementById('tab-banners').className = 'btn-outline text-sm';
-                document.getElementById('tab-promos').className = 'btn-outline text-sm';
-            } else if (tabName === 'users') {
-                document.getElementById('view-orders').classList.add('hidden');
-                document.getElementById('view-users').classList.remove('hidden');
-                document.getElementById('view-banners').classList.add('hidden');
-                document.getElementById('view-promos').classList.add('hidden');
-                document.getElementById('tab-orders').className = 'btn-outline text-sm';
-                document.getElementById('tab-users').className = 'btn-pk text-sm';
-                document.getElementById('tab-banners').className = 'btn-outline text-sm';
-                document.getElementById('tab-promos').className = 'btn-outline text-sm';
-                const tbody = document.getElementById('users-table-body');
-                if (tbody.innerHTML.includes('Klik tab ini')) loadUsers();
-            } else if (tabName === 'banners') {
-                document.getElementById('view-orders').classList.add('hidden');
-                document.getElementById('view-users').classList.add('hidden');
-                document.getElementById('view-banners').classList.remove('hidden');
-                document.getElementById('view-promos').classList.add('hidden');
-                document.getElementById('tab-orders').className = 'btn-outline text-sm';
-                document.getElementById('tab-users').className = 'btn-outline text-sm';
-                document.getElementById('tab-banners').className = 'btn-pk text-sm';
-                document.getElementById('tab-promos').className = 'btn-outline text-sm';
-                if (allBanners.length === 0 && document.getElementById('banners-list').innerText.includes('Klik tab ini')) loadBanners();
-            } else if (tabName === 'promos') {
-                document.getElementById('view-orders').classList.add('hidden');
-                document.getElementById('view-users').classList.add('hidden');
-                document.getElementById('view-banners').classList.add('hidden');
-                document.getElementById('view-promos').classList.remove('hidden');
-                document.getElementById('tab-orders').className = 'btn-outline text-sm';
-                document.getElementById('tab-users').className = 'btn-outline text-sm';
-                document.getElementById('tab-banners').className = 'btn-outline text-sm';
-                document.getElementById('tab-promos').className = 'btn-pk text-sm';
-                const promoBody = document.getElementById('promos-table-body');
-                if (promoBody.innerText.includes('Klik tab ini')) loadPromos();
-            }
+        function switchTab(tabName) {
+            const tabs = ['orders', 'users', 'banners', 'promos', 'catalog'];
+            tabs.forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = 'btn-outline text-sm whitespace-nowrap';
+            });
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).className = 'btn-pk text-sm whitespace-nowrap';
+            
+            if (tabName === 'users' && document.getElementById('users-table-body').innerText.includes('Klik tab ini')) loadUsers();
+            if (tabName === 'banners' && allBanners.length === 0) loadBanners();
+            if (tabName === 'promos' && allPromos.length === 0) loadPromos();
+            if (tabName === 'catalog') loadCatalogItems();
         }
 
         function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
-            showLoading();
             try {
                 const { db, collection, query, onSnapshot } = window.firebaseAdmin;
                 const q = query(collection(db, "users"));
@@ -840,16 +782,12 @@ setInterval(() => {
                         return isNaN(dateObj) ? 0 : dateObj.getTime();
                     }
                     usersData.sort((a, b) => parseDate(b.LastSeen) - parseDate(a.LastSeen));
-                    if (usersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; hideLoading(); return; }
+                    if (usersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; return; }
                     tbody.innerHTML = usersData.map(d => {
                         let createdDate = '-';
                         if (d.createdAt) { try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) { createdDate = d.createdAt; } }
-                        
-                        // CEK STATUS INSTALASI PWA
                         const isInstalled = d.isInstalled === true;
-                        // Jika true, teks hijau (text-green-400) & bold. Jika false, tetap abu-abu (text-gray-300)
                         const emailClass = isInstalled ? 'text-green-400 font-bold' : 'text-gray-300';
-                        
                         return `<tr>
                             <td class="text-xs ${emailClass} whitespace-nowrap">${d.email || '-'}</td>
                             <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
@@ -858,9 +796,8 @@ setInterval(() => {
                             <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
                         </tr>`;
                     }).join('');
-                    hideLoading();
-                }, (error) => { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; hideLoading(); });
-            } catch (err) { hideLoading(); }
+                }, (error) => { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; });
+            } catch (err) {}
         }
 
         function loadBanners() {
@@ -872,66 +809,25 @@ setInterval(() => {
                 allBanners = [];
                 snapshot.forEach((doc) => allBanners.push({ id: doc.id, data: doc.data() }));
                 renderBanners();
-            }, (error) => {
-                listEl.innerHTML = '<p class="text-red-400 text-sm col-span-full">Gagal memuat data.</p>';
-            });
+            }, (error) => { listEl.innerHTML = '<p class="text-red-400 text-sm col-span-full">Gagal memuat data.</p>'; });
         }
 
-                function renderBanners() {
+        function renderBanners() {
             const listEl = document.getElementById('banners-list');
-
-            // Urutkan array berdasarkan 'order' agar selalu sinkron
-            allBanners.sort((a, b) => {
-                const orderA = a.data.order || 999;
-                const orderB = b.data.order || 999;
-                return orderA - orderB;
-            });
-
-            if (allBanners.length === 0) {
-                listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner. Klik "Tambah Banner" untuk membuat baru.</p>';
-                return;
-            }
-
-            // Deteksi perangkat Mobile
+            allBanners.sort((a, b) => (a.data.order || 999) - (b.data.order || 999));
+            if (allBanners.length === 0) { listEl.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada banner.</p>'; return; }
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
             listEl.innerHTML = allBanners.map((b, index) => {
                 const orderNum = index + 1;
                 const orderStr = String(orderNum).padStart(2, '0');
                 const isActive = b.data.active;
                 const typeText = b.data.type === 'info' ? 'Informasi' : 'Promosi';
-                
-                // Logika Badge Status (Aktif / Terjadwal / Nonaktif)
-                let statusBadge = '';
-                if (!isActive) {
-                    statusBadge = `<span class="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Nonaktif</span>`;
-                } else {
-                    let isScheduled = false;
-                    if (b.data.scheduleStartTime) {
-                        const start = new Date(b.data.scheduleStartTime);
-                        if (start > new Date()) {
-                            isScheduled = true; // Jika jam mulai belum tercapai, berarti Terjadwal
-                        }
-                    }
-                    
-                    if (isScheduled) {
-                        statusBadge = `<span class="bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Terjadwal</span>`;
-                    } else {
-                        // Jika sudah mulai (live) atau tidak ada jadwal, tampilkan Aktif
-                        statusBadge = `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Aktif</span>`;
-                    }
-                }
+                let statusBadge = isActive ? `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Aktif</span>` : `<span class="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">Nonaktif</span>`;
                 const mobileOrderBtns = `
                     <div class="flex gap-1 md:hidden">
-                        <button onclick="moveBanner('${b.id}', -1)" ${index === 0 ? 'disabled' : ''} class="bg-dk-600 text-white text-xs px-2 py-1 rounded-md ${index === 0 ? 'opacity-30' : 'hover:bg-pk'}">
-                            <i class="fa-solid fa-arrow-up"></i>
-                        </button>
-                        <button onclick="moveBanner('${b.id}', 1)" ${index === allBanners.length - 1 ? 'disabled' : ''} class="bg-dk-600 text-white text-xs px-2 py-1 rounded-md ${index === allBanners.length - 1 ? 'opacity-30' : 'hover:bg-pk'}">
-                            <i class="fa-solid fa-arrow-down"></i>
-                        </button>
-                    </div>
-                `;
-
+                        <button onclick="moveBanner('${b.id}', -1)" ${index === 0 ? 'disabled' : ''} class="bg-dk-600 text-white text-xs px-2 py-1 rounded-md ${index === 0 ? 'opacity-30' : 'hover:bg-pk'}"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button onclick="moveBanner('${b.id}', 1)" ${index === allBanners.length - 1 ? 'disabled' : ''} class="bg-dk-600 text-white text-xs px-2 py-1 rounded-md ${index === allBanners.length - 1 ? 'opacity-30' : 'hover:bg-pk'}"><i class="fa-solid fa-arrow-down"></i></button>
+                    </div>`;
                 return `
                     <div class="card p-3 flex flex-col gap-2 relative" data-id="${b.id}">
                         <div class="relative">
@@ -940,355 +836,229 @@ setInterval(() => {
                                 <span class="bg-pk text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg">${orderStr}</span>
                                 ${statusBadge}
                             </div>
-                            <!-- Ikon Grip hanya muncul di Desktop -->
-                            <div class="absolute top-2 right-2 bg-black/50 text-white text-[10px] font-bold p-1 rounded-md cursor-grab hidden md:block">
-                                <i class="fa-solid fa-grip-vertical"></i>
-                            </div>
+                            <div class="absolute top-2 right-2 bg-black/50 text-white text-[10px] font-bold p-1 rounded-md cursor-grab hidden md:block"><i class="fa-solid fa-grip-vertical"></i></div>
                         </div>
                         <div class="flex-1 mt-1">
                             <h3 class="font-bold text-sm">${b.data.title || 'Tanpa Judul'}</h3>
                             <p class="text-xs text-gray-500 mt-0.5">${typeText}</p>
                         </div>
                         <div class="flex justify-between items-center mt-1">
-                            <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5 flex-1 mr-2">
-                                <i class="fa-solid fa-pen mr-1"></i> Edit
-                            </button>
+                            <button onclick="openEditBannerModal('${b.id}')" class="btn-outline text-xs py-1.5 flex-1 mr-2"><i class="fa-solid fa-pen mr-1"></i> Edit</button>
                             ${mobileOrderBtns}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
-
-            // Inisialisasi Drag and Drop (HANYA untuk Desktop)
             if (window.Sortable && !isMobile) {
-                Sortable.create(listEl, {
-                    animation: 150,
-                    ghostClass: 'opacity-30',
-                    onEnd: function (evt) {
-                        updateBannerOrder();
-                    }
-                });
+                Sortable.create(listEl, { animation: 150, ghostClass: 'opacity-30', onEnd: function () { updateBannerOrder(); } });
             }
         }
 
-        // Fungsi baru khusus Mobile untuk pindah posisi banner
         async function moveBanner(id, direction) {
             const currentIndex = allBanners.findIndex(b => b.id === id);
             const targetIndex = currentIndex + direction;
-            
             if (targetIndex < 0 || targetIndex >= allBanners.length) return;
-
-            // Tukar posisi di array lokal
             const temp = allBanners[currentIndex];
             allBanners[currentIndex] = allBanners[targetIndex];
             allBanners[targetIndex] = temp;
-
-            // Update nomor urut di memori lokal
-            allBanners.forEach((b, i) => {
-                b.data.order = i + 1;
-            });
-
-            renderBanners(); // Render ulang
-
-            // Simpan ke Firestore
+            allBanners.forEach((b, i) => { b.data.order = i + 1; });
+            renderBanners();
             try {
                 const { db, doc, writeBatch } = window.firebaseAdmin;
                 const batch = writeBatch(db);
-                
-                allBanners.forEach((b) => {
-                    const bannerRef = doc(db, "banners", b.id);
-                    batch.update(bannerRef, { order: b.data.order });
-                });
-                
+                allBanners.forEach((b) => { batch.update(doc(db, "banners", b.id), { order: b.data.order }); });
                 await batch.commit();
                 showToast("Urutan banner berhasil diperbarui!");
-            } catch (err) {
-                console.error("Gagal menyimpan urutan:", err);
-            }
+            } catch (err) { console.error("Gagal menyimpan urutan:", err); }
         }
 
-                // Fungsi untuk menyimpan urutan hasil drag and drop ke Firestore
         async function updateBannerOrder() {
             const listEl = document.getElementById('banners-list');
             const newOrderIds = Array.from(listEl.children).map(child => child.dataset.id);
-            
-            // 1. Update data 'order' di memori lokal (JavaScript) SECARA LANGSUNG
-            // Ini mencegah onSnapshot mereset tampilan saat data server belum berubah
             for (let i = 0; i < newOrderIds.length; i++) {
                 const id = newOrderIds[i];
                 const bannerObj = allBanners.find(b => b.id === id);
-                if (bannerObj) {
-                    bannerObj.data.order = i + 1; // Set urutan baru (1, 2, 3...)
-                }
+                if (bannerObj) bannerObj.data.order = i + 1;
             }
-            
-            // 2. Render ulang tampilan menggunakan data lokal yang baru diupdate
             renderBanners();
-            
-            // 3. Simpan urutan baru ke Firestore menggunakan Batch Write
             try {
                 const { db, doc, writeBatch } = window.firebaseAdmin;
                 const batch = writeBatch(db);
-                
                 for (let i = 0; i < newOrderIds.length; i++) {
                     const id = newOrderIds[i];
                     const bannerRef = doc(db, "banners", id);
                     batch.update(bannerRef, { order: i + 1 });
                 }
-                
                 await batch.commit();
                 showToast("Urutan banner berhasil diperbarui!");
-            } catch (err) {
-                console.error("Gagal menyimpan urutan:", err);
-                alert("Terjadi kesalahan saat menyimpan urutan.");
+            } catch (err) { console.error("Gagal menyimpan urutan:", err); }
+        }
+
+        function toggleBannerFields() {
+            const type = document.getElementById('banner-type').value;
+            if (type === 'info') {
+                document.getElementById('promo-only-fields').classList.add('hidden');
+                document.getElementById('info-only-fields').classList.remove('hidden');
+            } else {
+                document.getElementById('promo-only-fields').classList.remove('hidden');
+                document.getElementById('info-only-fields').classList.add('hidden');
             }
         }
 
-        // Fungsi untuk menampilkan/menyembunyikan field berdasarkan jenis konten
-function toggleBannerFields() {
-    const type = document.getElementById('banner-type').value;
-    if (type === 'info') {
-        document.getElementById('promo-only-fields').classList.add('hidden');
-        document.getElementById('info-only-fields').classList.remove('hidden');
-    } else {
-        document.getElementById('promo-only-fields').classList.remove('hidden');
-        document.getElementById('info-only-fields').classList.add('hidden');
-    }
-}
-
-function openEditBannerModal(id = null) {
-    const deleteBtn = document.getElementById('delete-banner-btn');
-    
-    // Fungsi bantu untuk mengisi input date & time dari format ISO
-    const fillScheduleInputs = (isoString, dateId, timeId) => {
-        if (isoString) {
-            const dt = new Date(isoString);
-            const yyyy = dt.getFullYear();
-            const mm = String(dt.getMonth() + 1).padStart(2, '0');
-            const dd = String(dt.getDate()).padStart(2, '0');
-            const hh = String(dt.getHours()).padStart(2, '0');
-            const min = String(dt.getMinutes()).padStart(2, '0');
-            document.getElementById(dateId).value = `${yyyy}-${mm}-${dd}`;
-            document.getElementById(timeId).value = `${hh}:${min}`;
-        } else {
-            document.getElementById(dateId).value = '';
-            document.getElementById(timeId).value = '';
-        }
-    };
-
-    if (id) {
-        // --- MODE EDIT BANNER LAMA ---
-        const b = allBanners.find(x => x.id === id);
-        if (!b) return;
-        document.getElementById('banner-doc-id').value = id;
-        document.getElementById('banner-type').value = b.data.type || 'promo';
-        document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
-        document.getElementById('banner-title').value = b.data.title || '';
-        
-        fillScheduleInputs(b.data.scheduleStartTime, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
-        fillScheduleInputs(b.data.scheduleEndTime, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
-
-        // --- SEMBUNYIKAN JADWAL JIKA STATUSNYA SUDAH AKTIF/LIVE ---
-        const scheduleWrapper = document.getElementById('schedule-wrapper');
-        const now = new Date();
-        let isLive = false;
-        
-        if (b.data.active) {
-            let isScheduled = false;
-            if (b.data.scheduleStartTime) {
-                const start = new Date(b.data.scheduleStartTime);
-                if (start > now) {
-                    isScheduled = true; // Jika ada jadwal mulai tapi belum waktunya, berarti "Terjadwal"
+        function openEditBannerModal(id = null) {
+            const deleteBtn = document.getElementById('delete-banner-btn');
+            const fillScheduleInputs = (isoString, dateId, timeId) => {
+                if (isoString) {
+                    const dt = new Date(isoString);
+                    const yyyy = dt.getFullYear();
+                    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+                    const dd = String(dt.getDate()).padStart(2, '0');
+                    const hh = String(dt.getHours()).padStart(2, '0');
+                    const min = String(dt.getMinutes()).padStart(2, '0');
+                    document.getElementById(dateId).value = `${yyyy}-${mm}-${dd}`;
+                    document.getElementById(timeId).value = `${hh}:${min}`;
+                } else {
+                    document.getElementById(dateId).value = '';
+                    document.getElementById(timeId).value = '';
                 }
+            };
+
+            if (id) {
+                const b = allBanners.find(x => x.id === id);
+                if (!b) return;
+                document.getElementById('banner-doc-id').value = id;
+                document.getElementById('banner-type').value = b.data.type || 'promo';
+                document.getElementById('banner-imageUrl').value = b.data.imageUrl || '';
+                document.getElementById('banner-title').value = b.data.title || '';
+                fillScheduleInputs(b.data.scheduleStartTime, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
+                fillScheduleInputs(b.data.scheduleEndTime, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
+                document.getElementById('schedule-wrapper').classList.remove('hidden');
+                document.getElementById('banner-label-periode').value = b.data.labelPeriode || 'Periode';
+                document.getElementById('banner-periode').value = b.data.periode || '';
+                document.getElementById('banner-label-hadiah').value = b.data.labelHadiah || 'Total Hadiah / Keuntungan';
+                document.getElementById('banner-hadiah').value = b.data.hadiah || '';
+                document.getElementById('banner-label-pengumuman').value = b.data.labelPengumuman || 'Pemenang / Pengumuman';
+                document.getElementById('banner-pengumuman').value = b.data.pengumuman || '';
+                document.getElementById('banner-label-caraIkut').value = b.data.labelCaraIkut || 'Cara Mengikuti';
+                document.getElementById('banner-caraIkut').value = (b.data.caraIkut || []).join('\n');
+                document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
+                document.getElementById('banner-active').checked = b.data.active || false;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('banner-doc-id').value = '';
+                document.getElementById('banner-type').value = 'promo';
+                document.getElementById('banner-imageUrl').value = '';
+                document.getElementById('banner-title').value = '';
+                fillScheduleInputs(null, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
+                fillScheduleInputs(null, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
+                document.getElementById('schedule-wrapper').classList.remove('hidden');
+                document.getElementById('banner-label-periode').value = 'Periode';
+                document.getElementById('banner-periode').value = '';
+                document.getElementById('banner-label-hadiah').value = 'Total Hadiah / Keuntungan';
+                document.getElementById('banner-hadiah').value = '';
+                document.getElementById('banner-label-pengumuman').value = 'Pemenang / Pengumuman';
+                document.getElementById('banner-pengumuman').value = '';
+                document.getElementById('banner-label-caraIkut').value = 'Cara Mengikuti';
+                document.getElementById('banner-caraIkut').value = '';
+                document.getElementById('banner-isiPesan').value = '';
+                document.getElementById('banner-active').checked = true;
+                deleteBtn.classList.add('hidden');
             }
-            
-            if (!isScheduled) {
-                isLive = true; // Jika aktif dan BUKAN terjadwal, berarti sudah LIVE
+            toggleBannerFields();
+            document.getElementById('edit-banner-modal').classList.remove('hidden');
+        }
+        function closeEditBannerModal() { document.getElementById('edit-banner-modal').classList.add('hidden'); }
+        function closePreviewBanner() { document.getElementById('preview-banner-modal').classList.add('hidden'); }
+
+        function previewBanner() {
+            const type = document.getElementById('banner-type').value;
+            const imageUrl = document.getElementById('banner-imageUrl').value || 'https://via.placeholder.com/400x200/1A1A1A/FF2D78?text=No+Image';
+            const title = document.getElementById('banner-title').value || 'Tanpa Judul';
+            const el = document.getElementById('preview-content');
+
+            if (type === 'info') {
+                const isiPesan = document.getElementById('banner-isiPesan').value || 'Pesan belum diisi.';
+                el.innerHTML = `
+                    <div class="rounded-xl overflow-hidden mb-4" style="aspect-ratio: 2 / 1; background-color: #1A1A1A;">
+                        <img src="${imageUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; display: block;" referrerpolicy="no-referrer">
+                    </div>
+                    <div class="card p-6 fade-up">
+                        <h3 class="text-lg font-bold text-pk mb-4">${title}</h3>
+                        <p class="text-sm text-gray-300 leading-relaxed text-justify whitespace-pre-line">${isiPesan}</p>
+                    </div>`;
+            } else {
+                const labelPeriode = document.getElementById('banner-label-periode').value || 'Periode';
+                const periode = document.getElementById('banner-periode').value || '-';
+                const labelHadiah = document.getElementById('banner-label-hadiah').value || 'Total Hadiah / Keuntungan';
+                const hadiah = document.getElementById('banner-hadiah').value;
+                const labelPengumuman = document.getElementById('banner-label-pengumuman').value || 'Pemenang / Pengumuman';
+                const pengumuman = document.getElementById('banner-pengumuman').value;
+                const labelCaraIkut = document.getElementById('banner-label-caraIkut').value || 'Cara Mengikuti';
+                const caraIkutRaw = document.getElementById('banner-caraIkut').value;
+                const caraIkutHtml = caraIkutRaw.split('\n').map(t => t.trim()).filter(t => t !== '').map(c => `<li>${c}</li>`).join('');
+                el.innerHTML = `
+                    <div class="rounded-xl overflow-hidden mb-4" style="aspect-ratio: 2 / 1; background-color: #1A1A1A;">
+                        <img src="${imageUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; display: block;" referrerpolicy="no-referrer">
+                    </div>
+                    <div class="card p-6 fade-up">
+                        <h3 class="text-lg font-bold text-pk mb-2">${title}</h3>
+                        <p class="text-xs text-gray-400 mb-4"><i class="fa-solid fa-calendar-days mr-2"></i> ${labelPeriode}: ${periode}</p>
+                        <div class="space-y-4 text-sm text-gray-300">
+                            ${hadiah ? `<div><h4 class="text-xs font-bold text-pk mb-1 uppercase tracking-wider">${labelHadiah}</h4><p class="text-base font-bold text-white">${hadiah}</p></div>` : ''}
+                            ${pengumuman ? `<div><h4 class="text-xs font-bold text-pk mb-1 uppercase tracking-wider">${labelPengumuman}</h4><p class="text-base text-white">${pengumuman}</p></div>` : ''}
+                            ${caraIkutHtml ? `<div class="pt-4 border-t border-dk-500/50"><h4 class="text-xs font-bold text-pk mb-2 uppercase tracking-wider">${labelCaraIkut}</h4><ol class="list-decimal list-inside space-y-1 text-gray-400 text-xs leading-relaxed">${caraIkutHtml}</ol></div>` : ''}
+                        </div>
+                    </div>`;
             }
-        }
-        
-        if (isLive) {
-            scheduleWrapper.classList.add('hidden'); // Sembunyikan field jadwal karena sudah live
-        } else {
-            scheduleWrapper.classList.remove('hidden'); // Tampilkan field jadwal jika masih terjadwal/nonaktif
+            document.getElementById('preview-banner-modal').classList.remove('hidden');
         }
 
-        document.getElementById('banner-label-periode').value = b.data.labelPeriode || 'Periode';
-        document.getElementById('banner-periode').value = b.data.periode || '';
-        document.getElementById('banner-label-hadiah').value = b.data.labelHadiah || 'Total Hadiah / Keuntungan';
-        document.getElementById('banner-hadiah').value = b.data.hadiah || '';
-        document.getElementById('banner-label-pengumuman').value = b.data.labelPengumuman || 'Pemenang / Pengumuman';
-        document.getElementById('banner-pengumuman').value = b.data.pengumuman || '';
-        document.getElementById('banner-label-caraIkut').value = b.data.labelCaraIkut || 'Cara Mengikuti';
-        document.getElementById('banner-caraIkut').value = (b.data.caraIkut || []).join('\n');
-
-        document.getElementById('banner-isiPesan').value = b.data.isiPesan || '';
-        document.getElementById('banner-active').checked = b.data.active || false;
-        deleteBtn.classList.remove('hidden');
-    } else {
-        // --- MODE TAMBAH BANNER BARU ---
-        document.getElementById('banner-doc-id').value = '';
-        document.getElementById('banner-type').value = 'promo';
-        document.getElementById('banner-imageUrl').value = '';
-        document.getElementById('banner-title').value = '';
-        
-        fillScheduleInputs(null, 'banner-scheduleStartDate', 'banner-scheduleStartTime');
-        fillScheduleInputs(null, 'banner-scheduleEndDate', 'banner-scheduleEndTime');
-        
-        // Pastikan field jadwal terlihat saat membuat banner baru
-        document.getElementById('schedule-wrapper').classList.remove('hidden');
-        
-        document.getElementById('banner-label-periode').value = 'Periode';
-        document.getElementById('banner-periode').value = '';
-        document.getElementById('banner-label-hadiah').value = 'Total Hadiah / Keuntungan';
-        document.getElementById('banner-hadiah').value = '';
-        document.getElementById('banner-label-pengumuman').value = 'Pemenang / Pengumuman';
-        document.getElementById('banner-pengumuman').value = '';
-        document.getElementById('banner-label-caraIkut').value = 'Cara Mengikuti';
-        document.getElementById('banner-caraIkut').value = '';
-
-        document.getElementById('banner-isiPesan').value = '';
-        document.getElementById('banner-active').checked = true;
-        deleteBtn.classList.add('hidden');
-    }
-    toggleBannerFields();
-    document.getElementById('edit-banner-modal').classList.remove('hidden');
-}
-function closeEditBannerModal() { 
-    document.getElementById('edit-banner-modal').classList.add('hidden'); 
-}
-function closePreviewBanner() { 
-    document.getElementById('preview-banner-modal').classList.add('hidden'); 
-}
-
-function previewBanner() {
-    const type = document.getElementById('banner-type').value;
-    // Ambil semua data dari form yang sedang diketik
-    const imageUrl = document.getElementById('banner-imageUrl').value || 'https://via.placeholder.com/400x200/1A1A1A/FF2D78?text=No+Image';
-    const title = document.getElementById('banner-title').value || 'Tanpa Judul';
-    const el = document.getElementById('preview-content');
-
-    if (type === 'info') {
-        // Format Konten Informasi
-        const isiPesan = document.getElementById('banner-isiPesan').value || 'Pesan belum diisi.';
-        el.innerHTML = `
-            <div class="rounded-xl overflow-hidden mb-4" style="aspect-ratio: 2 / 1; background-color: #1A1A1A;">
-                <img src="${imageUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; display: block;" referrerpolicy="no-referrer">
-            </div>
-            <div class="card p-6 fade-up">
-                <h3 class="text-lg font-bold text-pk mb-4">${title}</h3>
-                <p class="text-sm text-gray-300 leading-relaxed text-justify whitespace-pre-line">${isiPesan}</p>
-            </div>
-        `;
-    } else {
-        // Format Konten Promosi
-        const labelPeriode = document.getElementById('banner-label-periode').value || 'Periode';
-        const periode = document.getElementById('banner-periode').value || '-';
-        const labelHadiah = document.getElementById('banner-label-hadiah').value || 'Total Hadiah / Keuntungan';
-        const hadiah = document.getElementById('banner-hadiah').value;
-        const labelPengumuman = document.getElementById('banner-label-pengumuman').value || 'Pemenang / Pengumuman';
-        const pengumuman = document.getElementById('banner-pengumuman').value;
-        const labelCaraIkut = document.getElementById('banner-label-caraIkut').value || 'Cara Mengikuti';
-        const caraIkutRaw = document.getElementById('banner-caraIkut').value;
-        const caraIkutHtml = caraIkutRaw.split('\n').map(t => t.trim()).filter(t => t !== '').map(c => `<li>${c}</li>`).join('');
-        
-        el.innerHTML = `
-            <div class="rounded-xl overflow-hidden mb-4" style="aspect-ratio: 2 / 1; background-color: #1A1A1A;">
-                <img src="${imageUrl}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; display: block;" referrerpolicy="no-referrer">
-            </div>
-            <div class="card p-6 fade-up">
-                <h3 class="text-lg font-bold text-pk mb-2">${title}</h3>
-                <p class="text-xs text-gray-400 mb-4"><i class="fa-solid fa-calendar-days mr-2"></i> ${labelPeriode}: ${periode}</p>
-                
-                <div class="space-y-4 text-sm text-gray-300">
-                    ${hadiah ? `
-                    <div>
-                        <h4 class="text-xs font-bold text-pk mb-1 uppercase tracking-wider">${labelHadiah}</h4>
-                        <p class="text-base font-bold text-white">${hadiah}</p>
-                    </div>` : ''}
-                    ${pengumuman ? `
-                    <div>
-                        <h4 class="text-xs font-bold text-pk mb-1 uppercase tracking-wider">${labelPengumuman}</h4>
-                        <p class="text-base text-white">${pengumuman}</p>
-                    </div>` : ''}
-                    ${caraIkutHtml ? `
-                    <div class="pt-4 border-t border-dk-500/50">
-                        <h4 class="text-xs font-bold text-pk mb-2 uppercase tracking-wider">${labelCaraIkut}</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-gray-400 text-xs leading-relaxed">
-                            ${caraIkutHtml}
-                        </ol>
-                    </div>` : ''}
-                </div>
-            </div>
-        `;
-    }
-    
-    // Tampilkan modal preview
-    document.getElementById('preview-banner-modal').classList.remove('hidden');
-}
-async function saveBannerChange() {
-    const id = document.getElementById('banner-doc-id').value;
-    const type = document.getElementById('banner-type').value;
-    
-    // Fungsi bantu untuk menggabungkan Date & Time menjadi ISO String
-    const getISOTime = (dateId, timeId) => {
-        const date = document.getElementById(dateId).value;
-        const time = document.getElementById(timeId).value;
-        if (date && time) {
-            return new Date(`${date}T${time}`).toISOString();
+        async function saveBannerChange() {
+            const id = document.getElementById('banner-doc-id').value;
+            const type = document.getElementById('banner-type').value;
+            const getISOTime = (dateId, timeId) => {
+                const date = document.getElementById(dateId).value;
+                const time = document.getElementById(timeId).value;
+                if (date && time) return new Date(`${date}T${time}`).toISOString();
+                return null;
+            };
+            const startISO = getISOTime('banner-scheduleStartDate', 'banner-scheduleStartTime');
+            const endISO = getISOTime('banner-scheduleEndDate', 'banner-scheduleEndTime');
+            const data = {
+                type: type,
+                imageUrl: document.getElementById('banner-imageUrl').value,
+                title: document.getElementById('banner-title').value,
+                scheduleStartTime: startISO,
+                scheduleEndTime: endISO,
+                active: document.getElementById('banner-active').checked
+            };
+            if (type === 'info') {
+                data.isiPesan = document.getElementById('banner-isiPesan').value;
+            } else {
+                data.labelPeriode = document.getElementById('banner-label-periode').value || 'Periode';
+                data.periode = document.getElementById('banner-periode').value;
+                data.labelHadiah = document.getElementById('banner-label-hadiah').value || 'Total Hadiah / Keuntungan';
+                data.hadiah = document.getElementById('banner-hadiah').value;
+                data.labelPengumuman = document.getElementById('banner-label-pengumuman').value || 'Pemenang / Pengumuman';
+                data.pengumuman = document.getElementById('banner-pengumuman').value;
+                data.labelCaraIkut = document.getElementById('banner-label-caraIkut').value || 'Cara Mengikuti';
+                data.caraIkut = document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== '');
+            }
+            if (!data.imageUrl) { alert("URL Gambar wajib diisi!"); return; }
+            showLoading();
+            try {
+                const { db, doc, setDoc, collection, updateDoc } = window.firebaseAdmin;
+                if (!id) {
+                    const newDocRef = doc(collection(db, "banners"));
+                    await setDoc(newDocRef, data);
+                    showToast("Banner berhasil ditambahkan!");
+                } else {
+                    await updateDoc(doc(db, "banners", id), data);
+                    showToast("Banner berhasil diperbarui!");
+                }
+                closeEditBannerModal();
+            } catch (err) { alert("Gagal menyimpan banner."); } 
+            finally { hideLoading(); }
         }
-        return null;
-    };
-
-    const startISO = getISOTime('banner-scheduleStartDate', 'banner-scheduleStartTime');
-    const endISO = getISOTime('banner-scheduleEndDate', 'banner-scheduleEndTime');
-
-    const data = {
-        type: type,
-        imageUrl: document.getElementById('banner-imageUrl').value,
-        title: document.getElementById('banner-title').value,
-        scheduleStartTime: startISO,
-        scheduleEndTime: endISO,
-        active: document.getElementById('banner-active').checked
-    };
-
-    if (type === 'info') {
-        data.isiPesan = document.getElementById('banner-isiPesan').value;
-        data.labelPeriode = ''; data.periode = '';
-        data.labelHadiah = ''; data.hadiah = '';
-        data.labelPengumuman = ''; data.pengumuman = '';
-        data.labelCaraIkut = ''; data.caraIkut = [];
-    } else {
-        data.labelPeriode = document.getElementById('banner-label-periode').value || 'Periode';
-        data.periode = document.getElementById('banner-periode').value;
-        data.labelHadiah = document.getElementById('banner-label-hadiah').value || 'Total Hadiah / Keuntungan';
-        data.hadiah = document.getElementById('banner-hadiah').value;
-        data.labelPengumuman = document.getElementById('banner-label-pengumuman').value || 'Pemenang / Pengumuman';
-        data.pengumuman = document.getElementById('banner-pengumuman').value;
-        data.labelCaraIkut = document.getElementById('banner-label-caraIkut').value || 'Cara Mengikuti';
-        data.caraIkut = document.getElementById('banner-caraIkut').value.split('\n').map(t => t.trim()).filter(t => t !== '');
-        data.isiPesan = '';
-    }
-
-    if (!data.imageUrl) { alert("URL Gambar wajib diisi!"); return; }
-    showLoading();
-    try {
-        const { db, doc, setDoc, collection, updateDoc } = window.firebaseAdmin;
-        if (!id) {
-            const newDocRef = doc(collection(db, "banners"));
-            await setDoc(newDocRef, data);
-            showToast("Banner berhasil ditambahkan!");
-        } else {
-            await updateDoc(doc(db, "banners", id), data);
-            showToast("Banner berhasil diperbarui!");
-        }
-        closeEditBannerModal();
-    } catch (err) { 
-        alert("Gagal menyimpan banner."); console.error(err); 
-    } finally { 
-        hideLoading(); 
-    }
-}
 
         async function deleteBanner() {
             const id = document.getElementById('banner-doc-id').value;
@@ -1303,7 +1073,6 @@ async function saveBannerChange() {
             } catch (err) { alert("Gagal menghapus banner."); } 
             finally { hideLoading(); }
         }
-        let allPromos = [];
 
         function loadPromos() {
             const { db, collection, query, onSnapshot } = window.firebaseAdmin;
@@ -1314,97 +1083,64 @@ async function saveBannerChange() {
                 allPromos = [];
                 snapshot.forEach((doc) => allPromos.push({ id: doc.id, data: doc.data() }));
                 renderPromos();
-            }, (error) => {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`;
-            });
+            }, (error) => { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; });
         }
 
         function renderPromos() {
             const tbody = document.getElementById('promos-table-body');
-            if (allPromos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-8">Belum ada kode promo.</td></tr>`;
-                return;
-            }
+            if (allPromos.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 py-8">Belum ada kode promo.</td></tr>`; return; }
             tbody.innerHTML = allPromos.map(p => {
                 const discount = p.data.discount ? `Rp ${p.data.discount.toLocaleString('id-ID')}` : 'Rp 0';
-                const isActive = p.data.active !== false; // Default true jika field tidak ada
+                const isActive = p.data.active !== false;
                 const statusClass = isActive ? 'badge-green' : 'badge-red';
                 const statusText = isActive ? 'Aktif' : 'Nonaktif';
-                return `
-                    <tr>
-                        <td class="font-mono text-xs whitespace-nowrap">${p.id}</td>
-                        <td class="font-bold whitespace-nowrap text-sm">${discount}</td>
-                        <td><span class="badge ${statusClass} whitespace-nowrap">${statusText}</span></td>
-                        <td class="whitespace-nowrap">
-                            <button onclick="openEditPromoModal('${p.id}')" class="btn-outline text-xs px-3 py-1.5">
-                                <i class="fa-solid fa-pen mr-1"></i> Edit
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                return `<tr>
+                    <td class="font-mono text-xs whitespace-nowrap">${p.id}</td>
+                    <td class="font-bold whitespace-nowrap text-sm">${discount}</td>
+                    <td><span class="badge ${statusClass} whitespace-nowrap">${statusText}</span></td>
+                    <td class="whitespace-nowrap"><button onclick="openEditPromoModal('${p.id}')" class="btn-outline text-xs px-3 py-1.5"><i class="fa-solid fa-pen mr-1"></i> Edit</button></td>
+                </tr>`;
             }).join('');
         }
 
         function openEditPromoModal(id = null) {
             const deleteBtn = document.getElementById('delete-promo-btn');
             const codeInput = document.getElementById('promo-code');
-            
             if (id) {
                 const p = allPromos.find(x => x.id === id);
                 if (!p) return;
                 document.getElementById('promo-doc-id').value = id;
                 codeInput.value = id;
-                codeInput.readOnly = true; // Kode promo tidak bisa diubah saat edit
+                codeInput.readOnly = true;
                 document.getElementById('promo-discount').value = p.data.discount || 0;
                 document.getElementById('promo-active').checked = p.data.active !== false;
                 deleteBtn.classList.remove('hidden');
             } else {
                 document.getElementById('promo-doc-id').value = '';
                 codeInput.value = '';
-                codeInput.readOnly = false; // Bisa diketik saat buat baru
+                codeInput.readOnly = false;
                 document.getElementById('promo-discount').value = '';
                 document.getElementById('promo-active').checked = true;
                 deleteBtn.classList.add('hidden');
             }
             document.getElementById('edit-promo-modal').classList.remove('hidden');
         }
-
-        function closeEditPromoModal() { 
-            document.getElementById('edit-promo-modal').classList.add('hidden'); 
-        }
+        function closeEditPromoModal() { document.getElementById('edit-promo-modal').classList.add('hidden'); }
 
         async function savePromoChange() {
             const id = document.getElementById('promo-doc-id').value;
             const code = document.getElementById('promo-code').value.trim().toUpperCase();
             const discount = parseInt(document.getElementById('promo-discount').value) || 0;
             const active = document.getElementById('promo-active').checked;
-
             if (!code) { alert("Kode promo wajib diisi!"); return; }
-
             showLoading();
             try {
                 const { db, doc, setDoc, updateDoc } = window.firebaseAdmin;
-                if (!id) {
-                    // Buat baru (Doc ID = Kode Promo)
-                    await setDoc(doc(db, "promo_codes", code), {
-                        discount: discount,
-                        active: active
-                    });
-                    showToast("Kode promo berhasil ditambahkan!");
-                } else {
-                    // Update promo lama
-                    await updateDoc(doc(db, "promo_codes", id), {
-                        discount: discount,
-                        active: active
-                    });
-                    showToast("Kode promo berhasil diperbarui!");
-                }
+                if (!id) { await setDoc(doc(db, "promo_codes", code), { discount, active }); showToast("Kode promo berhasil ditambahkan!"); } 
+                else { await updateDoc(doc(db, "promo_codes", id), { discount, active }); showToast("Kode promo berhasil diperbarui!"); }
                 closeEditPromoModal();
-            } catch (err) { 
-                alert("Gagal menyimpan promo."); console.error(err); 
-            } finally { 
-                hideLoading(); 
-            }
+            } catch (err) { alert("Gagal menyimpan promo."); } 
+            finally { hideLoading(); }
         }
 
         async function deletePromo() {
@@ -1417,16 +1153,153 @@ async function saveBannerChange() {
                 await deleteDoc(doc(db, "promo_codes", id));
                 showToast("Kode promo berhasil dihapus!");
                 closeEditPromoModal();
-            } catch (err) { 
-                alert("Gagal menghapus promo."); 
-            } finally { 
-                hideLoading(); 
+            } catch (err) { alert("Gagal menghapus promo."); } 
+            finally { hideLoading(); }
+        }
+
+        // === FUNGSI KATALOG PRODUK ===
+        let currentCatalogItems = [];
+        function loadCatalogItems() {
+            const catType = document.getElementById('catalog-type').value;
+            const { db, collection, query, onSnapshot } = window.firebaseAdmin;
+            const tbody = document.getElementById('catalog-table-body');
+            const thead = document.getElementById('catalog-table-head');
+            
+            const schema = CATALOG_SCHEMAS[catType];
+            let headerHtml = '<tr>';
+            schema.fields.forEach(f => headerHtml += `<th>${f.label}</th>`);
+            headerHtml += '<th>Aksi</th></tr>';
+            thead.innerHTML = headerHtml;
+            
+            tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="text-center text-gray-500 py-8">Memuat data...</td></tr>`;
+            
+            const q = query(collection(db, catType));
+            onSnapshot(q, (snapshot) => {
+                currentCatalogItems = [];
+                snapshot.forEach((doc) => currentCatalogItems.push({ id: doc.id, data: doc.data() }));
+                renderCatalogItems();
+            }, (error) => {
+                tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="text-center text-red-400 py-8">Gagal memuat.</td></tr>`;
+            });
+        }
+
+        function renderCatalogItems() {
+            const catType = document.getElementById('catalog-type').value;
+            const schema = CATALOG_SCHEMAS[catType];
+            const tbody = document.getElementById('catalog-table-body');
+            if (currentCatalogItems.length === 0) { tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; return; }
+            
+            tbody.innerHTML = currentCatalogItems.map(item => {
+                let rowHtml = '<tr>';
+                schema.fields.forEach(f => {
+                    let val = item.data[f.key] || '-';
+                    if (f.type === 'number' && f.key === 'price') val = `Rp ${parseInt(val).toLocaleString('id-ID')}`;
+                    rowHtml += `<td class="text-xs text-gray-300">${val}</td>`;
+                });
+                rowHtml += `<td><button onclick="openEditCatalogModal('${item.id}')" class="btn-outline text-xs px-3 py-1.5"><i class="fa-solid fa-pen mr-1"></i> Edit</button></td></tr>`;
+                return rowHtml;
+            }).join('');
+        }
+
+        function openEditCatalogModal(id = null) {
+            const catType = document.getElementById('catalog-type').value;
+            const schema = CATALOG_SCHEMAS[catType];
+            document.getElementById('catalog-active-type').value = catType;
+            document.getElementById('catalog-modal-title').innerText = id ? 'Edit Item' : `Tambah ${schema.name}`;
+            const deleteBtn = document.getElementById('delete-catalog-btn');
+            const formFields = document.getElementById('catalog-form-fields');
+            formFields.innerHTML = '';
+
+            schema.fields.forEach(f => {
+                const val = id ? (currentCatalogItems.find(i => i.id === id).data[f.key] || '') : '';
+                formFields.innerHTML += `
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">${f.label}</label>
+                        <input type="${f.type}" id="cat-field-${f.key}" class="form-input" placeholder="${f.label}" value="${val}">
+                    </div>`;
+            });
+
+            if (id) {
+                document.getElementById('catalog-doc-id').value = id;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('catalog-doc-id').value = '';
+                deleteBtn.classList.add('hidden');
+            }
+            document.getElementById('edit-catalog-modal').classList.remove('hidden');
+        }
+
+        function closeEditCatalogModal() { document.getElementById('edit-catalog-modal').classList.add('hidden'); }
+
+        async function saveCatalogChange() {
+            const catType = document.getElementById('catalog-active-type').value;
+            const id = document.getElementById('catalog-doc-id').value;
+            const schema = CATALOG_SCHEMAS[catType];
+            const data = {};
+            let isValid = true;
+            schema.fields.forEach(f => {
+                const inputVal = document.getElementById(`cat-field-${f.key}`).value;
+                if (!inputVal && f.key !== 'gejala' && f.key !== 'penjelasan') isValid = false;
+                data[f.key] = f.type === 'number' ? parseInt(inputVal) || 0 : inputVal;
+            });
+
+            if (!isValid) { showToast("Semua field wajib diisi!", "error"); return; }
+
+            showLoading();
+            try {
+                const { db, doc, setDoc, collection, updateDoc } = window.firebaseAdmin;
+                if (!id) {
+                    const newRef = doc(collection(db, catType));
+                    await setDoc(newRef, data);
+                    showToast("Item berhasil ditambahkan!");
+                } else {
+                    await updateDoc(doc(db, catType, id), data);
+                    showToast("Item berhasil diperbarui!");
+                }
+                closeEditCatalogModal();
+            } catch (err) { showToast("Gagal menyimpan item.", "error"); } 
+            finally { hideLoading(); }
+        }
+
+        async function deleteCatalogItem() {
+            const catType = document.getElementById('catalog-active-type').value;
+            const id = document.getElementById('catalog-doc-id').value;
+            if (!id) return;
+            if (!confirm("Yakin hapus item ini?")) return;
+            showLoading();
+            try {
+                const { db, doc, deleteDoc } = window.firebaseAdmin;
+                await deleteDoc(doc(db, catType, id));
+                showToast("Item berhasil dihapus!");
+                closeEditCatalogModal();
+            } catch (err) { showToast("Gagal menghapus.", "error"); } 
+            finally { hideLoading(); }
+        }
+
+        async function migrateHardcodedData() {
+            if (!confirm("Fitur ini akan memindahkan SEMUA data hardcoded ke Firestore. Lanjutkan?")) return;
+            showLoading();
+            const { db, collection, doc, setDoc } = window.firebaseAdmin;
+            try {
+                for (const [catType, items] of Object.entries(MIGRATION_DATA)) {
+                    for (const itemData of items) {
+                        const newRef = doc(collection(db, catType));
+                        await setDoc(newRef, itemData);
+                    }
+                }
+                showToast("Migrasi berhasil! Silakan cek tab Katalog.");
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal migrasi.", "error");
+            } finally {
+                hideLoading();
             }
         }
+
         function requestNotificationPermission() {
             if (!('Notification' in window)) return;
             if (Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => { if (permission === 'granted') showToast('Notifikasi pesanan baru diaktifkan!'); });
+                Notification.requestPermission().then(permission => { if (permission === 'granted') showToast('Notifikasi diaktifkan!'); });
             }
         }
 
@@ -1451,7 +1324,7 @@ async function saveBannerChange() {
                         const notif = new Notification('🔔 Pesanan Baru RANEL CELL!', options);
                         notif.onclick = () => { window.focus(); notif.close(); };
                     }
-                } catch (e) { console.error("Gagal membuat notifikasi:", e); }
+                } catch (e) {}
             }
         }
 
