@@ -484,7 +484,75 @@
 
     <script>
         let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [];
-        
+                // --- AUTO REFRESH PWA ADMIN ---
+        const BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit (Berpindah aplikasi di HP/Desktop)
+        const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000; // 2 menit (Diam menatap layar di Desktop)
+
+        // Deteksi perangkat (Mobile dikecualikan dari aturan idle 2 menit)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        let hiddenTime = null;
+        let lastInteractionTime = Date.now();
+
+        // 1. Catat setiap kali Admin menggerakkan mouse, mengetik, atau mengklik
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(eventName => {
+            document.addEventListener(eventName, () => {
+                lastInteractionTime = Date.now();
+            }, { passive: true });
+        });
+
+        // 2. Fungsi untuk mencatat waktu saat aplikasi kehilangan fokus
+        function handleAppHide() {
+            if (hiddenTime === null) {
+                hiddenTime = Date.now();
+            }
+        }
+
+        // 3. Fungsi untuk mengecek waktu saat aplikasi kembali aktif
+        function handleAppShow() {
+            if (hiddenTime !== null) {
+                const timeAway = Date.now() - hiddenTime;
+                if (timeAway >= BACKGROUND_LIMIT) {
+                    console.log('Kembali dari background (25 menit), merefresh data...');
+                    window.location.reload();
+                }
+                hiddenTime = null;
+            }
+            lastInteractionTime = Date.now(); // Reset timer idle
+        }
+
+        // Mendengarkan perubahan Visibility (Standar Web)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') handleAppHide();
+            else handleAppShow();
+        });
+
+        // Mendengarkan focus/blur (Cadangan khusus untuk Android PWA Standalone)
+        window.addEventListener('blur', handleAppHide);
+        window.addEventListener('focus', handleAppShow);
+
+        // 4. Fungsi Khusus Desktop: Cek idle (Admin menatap layar tanpa sentuh mouse/keyboard)
+        setInterval(() => {
+            if (isMobile) return; // <-- Hanya berjalan di Desktop
+
+            // Jangan refresh jika Admin sedang membuka form Edit (Termasuk form Katalog & Promo)
+            const isEditing = !document.getElementById('edit-banner-modal').classList.contains('hidden') || 
+                              !document.getElementById('edit-modal').classList.contains('hidden') ||
+                              !document.getElementById('edit-catalog-modal').classList.contains('hidden') || 
+                              !document.getElementById('edit-promo-modal').classList.contains('hidden');
+            
+            if (isEditing) {
+                lastInteractionTime = Date.now();
+                return;
+            }
+
+            const idleTime = Date.now() - lastInteractionTime;
+
+            if (idleTime >= DESKTOP_IDLE_LIMIT) {
+                console.log('Desktop idle 2 menit tercapai, merefresh data transaksi...');
+                window.location.reload();
+            }
+        }, 5000);
         // SCHEMA UNTUK MODAL KATALOG DINAMIS
         const CATALOG_SCHEMAS = {
             'katalog_paket_data': { name: 'Paket Data', fields: [{key:'provider',label:'Provider',type:'text'},{key:'duration',label:'Durasi',type:'text'},{key:'quota',label:'Kuota',type:'text'},{key:'price',label:'Harga',type:'number'}] },
