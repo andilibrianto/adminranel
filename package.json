@@ -1,8 +1,8 @@
 {
   "name": "adminranel",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "api/send-notif.js",
   "dependencies": {
-    "firebase-admin": "^12.1.4"
+    "firebase-admin": "^12.1.5"
   }
 }
