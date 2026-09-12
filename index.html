@@ -698,7 +698,7 @@
 
             // 1. Cek apakah email terdaftar di dalam Array ADMIN_EMAILS
             if (!ADMIN_EMAILS.includes(email)) {
-                errorEl.textContent = "Akses Ditolak! Email ini tidak memiliki izin Admin.";
+                errorEl.textContent = "Akses Ditolak! Silakan hubungi owner untuk mendapatkan akses";
                 errorEl.classList.remove('hidden');
                 return; // Hentikan proses login
             }
