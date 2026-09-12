@@ -490,7 +490,12 @@
 
     <script>
         let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [];
-                // --- AUTO REFRESH PWA ADMIN ---
+                // DAFTAR EMAIL ADMIN YANG DIIZINKAN
+        const ADMIN_EMAILS = [
+            'andilibrianto69@gmail.com', 
+            'admin.kedua@gmail.com',      // Ganti/tambahkan email admin lainnya di sini
+            'owner.ranel@gmail.com'
+        ];
         const BACKGROUND_LIMIT = 25 * 60 * 1000; // 25 menit (Berpindah aplikasi di HP/Desktop)
         const DESKTOP_IDLE_LIMIT = 2 * 60 * 1000; // 2 menit (Diam menatap layar di Desktop)
 
@@ -623,19 +628,38 @@
         function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
-        window.addEventListener('firebase-admin-ready', function() {
-            const { auth, onAuthStateChanged } = window.firebaseAdmin;
+                window.addEventListener('firebase-admin-ready', function() {
+            const { auth, onAuthStateChanged, signOut } = window.firebaseAdmin;
             showLoading();
+            
             onAuthStateChanged(auth, (user) => {
                 hideLoading();
+                
+                // Jika ada user yang login
                 if (user) {
+                    // Cek apakah email user ada di dalam daftar Array ADMIN_EMAILS
+                    if (!ADMIN_EMAILS.includes(user.email)) {
+                        // Jika BUKAN admin, keluarkan paksa (Sign Out) dan tampilkan pesan
+                        signOut(auth);
+                        document.getElementById('login-error').textContent = "Akses Ditolak! Akun ini tidak memiliki hak akses Admin.";
+                        document.getElementById('login-error').classList.remove('hidden');
+                        
+                        document.getElementById('login-view').classList.remove('hidden');
+                        document.getElementById('dashboard-view').classList.add('hidden');
+                        return;
+                    }
+
+                    // Jika Admin, tampilkan dashboard
+                    document.getElementById('login-error').classList.add('hidden');
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('dashboard-view').classList.remove('hidden');
+                    
                     const urlParams = new URLSearchParams(window.location.search);
                     const orderIdFromUrl = urlParams.get('orderId');
                     if (orderIdFromUrl) pendingOrderId = String(orderIdFromUrl);
                     loadOrders();
                 } else {
+                    // Jika tidak ada user login
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('dashboard-view').classList.add('hidden');
                 }
@@ -667,10 +691,19 @@
             } catch (err) { console.error('Gagal ambil FCM token:', err); }
         }
 
-        function adminLogin() {
+            function adminLogin() {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-pass').value;
             const errorEl = document.getElementById('login-error');
+
+            // 1. Cek apakah email terdaftar di dalam Array ADMIN_EMAILS
+            if (!ADMIN_EMAILS.includes(email)) {
+                errorEl.textContent = "Akses Ditolak! Email ini tidak memiliki izin Admin.";
+                errorEl.classList.remove('hidden');
+                return; // Hentikan proses login
+            }
+
+            // 2. Lanjutkan ke Firebase jika email terdaftar
             showLoading();
             window.firebaseAdmin.signInWithEmailAndPassword(window.firebaseAdmin.auth, email, pass)
                 .then(() => {
@@ -683,7 +716,7 @@
                 .catch(err => {
                     hideLoading();
                     let msg = "Terjadi error.";
-                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar.";
+                    if (err.code === 'auth/user-not-found') msg = "Akun email ini belum terdaftar di Firebase Authentication.";
                     else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Password yang Anda masukkan salah.";
                     else if (err.code === 'auth/invalid-email') msg = "Format email tidak valid.";
                     errorEl.textContent = msg;
