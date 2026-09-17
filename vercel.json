@@ -6,5 +6,5 @@
       "use": "@vercel/node"
     }
   ],
-  "installCommand": "rm -rf package-lock.json node_modules && npm install"
+  "installCommand": "npm install --no-package-lock --legacy-peer-deps"
 }
