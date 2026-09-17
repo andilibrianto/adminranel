@@ -799,7 +799,7 @@
             renderTable(filtered);
         }
 
-        function openEditModal(docId) {
+                function openEditModal(docId) {
             currentDocId = docId;
             const orderObj = allOrders.find(o => o.id === docId);
             if (!orderObj) return;
@@ -821,7 +821,21 @@
             itemsContainer.innerHTML = '';
             if (d.items && d.items.length > 0) {
                 d.items.forEach((item, idx) => {
-                    const idPels = (d.idPelanggan && d.idPelanggan[idx]) ? d.idPelanggan[idx].join(', ') : '';
+                    // Normalisasi data dari Firestore
+                    let idPelsArray = [];
+                    if (d.idPelanggan) {
+                        if (Array.isArray(d.idPelanggan)) {
+                            if (Array.isArray(d.idPelanggan[idx])) idPelsArray = d.idPelanggan[idx];
+                            else if (typeof d.idPelanggan[idx] === 'string') idPelsArray = [d.idPelanggan[idx]];
+                        } else if (d.idPelanggan[idx]) {
+                            if (Array.isArray(d.idPelanggan[idx])) idPelsArray = d.idPelanggan[idx];
+                            else if (typeof d.idPelanggan[idx] === 'string') idPelsArray = [d.idPelanggan[idx]];
+                        }
+                    }
+                    
+                    // Ubah join dari koma menjadi ENTER (\n)
+                    const idPelsText = idPelsArray.join('\n');
+                    
                     itemsContainer.innerHTML += `
                         <div class="p-3 bg-[#0e0e0e] rounded-lg border border-[#2a2a2a]">
                             <div class="mb-2 text-[11px] text-gray-500">Barang ${idx + 1}</div>
@@ -839,10 +853,10 @@
                                     <input type="number" class="form-input modal-item-qty" data-idx="${idx}" value="${item.quantity || 1}">
                                 </div>
                             </div>
-                            ${idPels !== '' ? `
+                            ${idPelsArray.length > 0 ? `
                             <div class="mt-2 pt-2 border-t border-[#222]">
-                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan</label>
-                                <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="3" style="resize: vertical;">${idPels}</textarea>
+                                <label class="text-[10px] text-gray-500 mb-1 block">ID Pelanggan (Pisahkan dengan Enter/Baris baru)</label>
+                                <textarea class="form-input modal-item-idpel" data-idx="${idx}" rows="${Math.max(3, idPelsArray.length)}" style="resize: vertical;">${idPelsText}</textarea>
                             </div>` : ''}
                         </div>`;
                 });
@@ -852,7 +866,7 @@
 
         function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); currentDocId = null; }
 
-        async function saveDataChange() {
+                async function saveDataChange() {
             if (!currentDocId) return;
             try {
                 let updatedItems = [];
@@ -864,7 +878,8 @@
                     const idpelInput = document.querySelector(`.modal-item-idpel[data-idx="${idx}"]`);
                     updatedItems.push({ name: nameInput.value, price: parseInt(priceInput.value) || 0, quantity: parseInt(qtyInput.value) || 1 });
                     if (idpelInput) {
-                        const ids = idpelInput.value.split('\n').map(id => id.trim()).filter(id => id !== '');
+                        // Ubah pemecah teks: bisa pisah dengan ENTER (\n) atau KOMA (,)
+                        const ids = idpelInput.value.split(/[\n,]/).map(id => id.trim()).filter(id => id !== '');
                         if (ids.length > 0) updatedIdPelanggan[idx] = ids;
                     }
                 });
