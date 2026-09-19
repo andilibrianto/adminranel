@@ -2,10 +2,14 @@ const admin = require('firebase-admin');
 
 // Inisialisasi Firebase Admin SDK
 if (!admin.apps.length) {
+    // Ambil Private Key dari Vercel
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    // Hapus tanda kutip ganda di awal dan akhir jika tidak sengaja terbawa
     if (privateKey && privateKey.startsWith('"') && privateKey.endsWith('"')) {
         privateKey = privateKey.slice(1, -1);
     }
+    // Ganti tulisan \n literal menjadi baris baru (enter) yang asli
     if (privateKey) {
         privateKey = privateKey.replace(/\\n/g, '\n');
     }
@@ -21,7 +25,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// [FIX] Tambahkan 'Authorization' pada Allow-Headers
+// Fungsi bantu untuk mengirim Header CORS
 function setCorsHeaders(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -29,8 +33,10 @@ function setCorsHeaders(res) {
 }
 
 module.exports = async (req, res) => {
+    // Set header CORS untuk semua respons
     setCorsHeaders(res);
 
+    // Tangani preflight request dari browser (Wajib untuk POST request)
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
@@ -40,31 +46,9 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // [FIX] Verifikasi token Firebase ID dari header Authorization
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Token tidak ditemukan' });
-        }
-        
-        const idToken = authHeader.split('Bearer ')[1];
-        
-        let decodedToken;
-        try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
-        } catch (tokenError) {
-            return res.status(401).json({ error: 'Token tidak valid atau sudah kedaluwarsa' });
-        }
-        
-        if (!decodedToken.email_verified) {
-            return res.status(403).json({ error: 'Email belum diverifikasi' });
-        }
-
         const { orderId, userName, total, items } = req.body;
 
-        if (!orderId || !userName) {
-            return res.status(400).json({ error: 'Data tidak lengkap' });
-        }
-
+        // 1. Ambil semua token FCM Admin yang tersimpan di Firestore
         const tokensSnapshot = await db.collection('admin_tokens').get();
         const tokens = tokensSnapshot.docs.map(doc => doc.data().token);
 
@@ -72,10 +56,11 @@ module.exports = async (req, res) => {
             return res.status(200).json({ message: 'Tidak ada admin online (token kosong)' });
         }
 
+        // 2. Susun pesan notifikasi
         let itemsText = items ? items.map(item => item.name).join(', ') : '-';
         if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
 
-        const message = {
+                const message = {
             data: {
                 title: '🔔 Pesanan Baru RANEL CELL!',
                 body: `${userName || 'Pelanggan'} - ${itemsText}\nTotal: Rp ${total.toLocaleString('id-ID')}`,
@@ -88,8 +73,10 @@ module.exports = async (req, res) => {
             tokens: tokens
         };
 
+        // 3. Kirim push notification ke semua token Admin
         const response = await admin.messaging().sendEachForMulticast(message);
         
+        // Hapus token yang tidak valid
         if (response.failureCount > 0) {
             const failedTokens = [];
             response.responses.forEach((resp, idx) => {
