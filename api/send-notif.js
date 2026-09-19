@@ -33,20 +33,44 @@ function setCorsHeaders(res) {
 }
 
 module.exports = async (req, res) => {
-    // Set header CORS untuk semua respons
     setCorsHeaders(res);
-
-    // Tangani preflight request dari browser (Wajib untuk POST request)
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
-
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
+        // [FIX] Verifikasi token Firebase ID dari header Authorization
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Token tidak ditemukan' });
+        }
+        
+        const idToken = authHeader.split('Bearer ')[1];
+        
+        // Verifikasi token menggunakan Firebase Admin SDK
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (tokenError) {
+            return res.status(401).json({ error: 'Token tidak valid atau sudah kedaluwarsa' });
+        }
+        
+        // Pastikan email user sudah terverifikasi
+        if (!decodedToken.email_verified) {
+            return res.status(403).json({ error: 'Email belum diverifikasi' });
+        }
+
         const { orderId, userName, total, items } = req.body;
+        
+        // [FIX] Validasi input dasar
+        if (!orderId || !userName) {
+            return res.status(400).json({ error: 'Data tidak lengkap' });
+        }
+        
+        // ... lanjut dengan logik kirim notifikasi yang sudah ada ...
 
         // 1. Ambil semua token FCM Admin yang tersimpan di Firestore
         const tokensSnapshot = await db.collection('admin_tokens').get();
