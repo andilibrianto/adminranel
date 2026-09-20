@@ -29,17 +29,34 @@ function setCorsHeaders(res) {
 
 module.exports = async (req, res) => {
     setCorsHeaders(res);
-
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
-
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Token tidak ditemukan' });
+        }
+        
+        const idToken = authHeader.split('Bearer ')[1];
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (tokenError) {
+            return res.status(401).json({ error: 'Token tidak valid atau sudah kedaluwarsa' });
+        }
+        if (!decodedToken.email_verified) {
+            return res.status(403).json({ error: 'Email belum diverifikasi' });
+        }
+
         const { orderId, userName, total, items } = req.body;
+        if (!orderId || !userName) {
+            return res.status(400).json({ error: 'Data tidak lengkap' });
+        }
 
         const tokensSnapshot = await db.collection('admin_tokens').get();
         const tokens = tokensSnapshot.docs.map(doc => doc.data().token);
