@@ -1,35 +1,25 @@
 const admin = require('firebase-admin');
 
-// PERBAIKAN: Cek aman untuk mencegah server crash (TypeError)
-try {
-    if (!admin.apps || !admin.apps.length) {
-        let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-        
-        if (privateKey && privateKey.startsWith('"') && privateKey.endsWith('"')) {
-            privateKey = privateKey.slice(1, -1);
-        }
-        if (privateKey) {
-            privateKey = privateKey.replace(/\\n/g, '\n');
-        }
-
-        if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: privateKey
-                })
-            });
-        } else {
-            console.error("Firebase Admin Environment Variables belum disetting di Vercel!");
-        }
+if (!admin.apps.length) {
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    if (privateKey && privateKey.startsWith('"') && privateKey.endsWith('"')) {
+        privateKey = privateKey.slice(1, -1);
     }
-} catch (error) {
-    console.error("Gagal inisialisasi Firebase Admin:", error);
+    if (privateKey) {
+        privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: privateKey
+        })
+    });
 }
 
-// Ambil db hanya jika Firebase berhasil jalan, jika tidak biarkan null
-const db = (admin.apps && admin.apps.length > 0) ? admin.firestore() : null;
+const db = admin.firestore();
 
 function setCorsHeaders(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,11 +38,6 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // Jika Firebase gagal jalan, kirim pesan error yang rapi tanpa crash
-    if (!db) {
-        return res.status(500).json({ error: "Server Admin belum siap. Cek Environment Variables Firebase di Vercel." });
-    }
-
     try {
         const { orderId, userName, total, items } = req.body;
 
@@ -66,7 +51,7 @@ module.exports = async (req, res) => {
         let itemsText = items ? items.map(item => item.name).join(', ') : '-';
         if (itemsText.length > 40) itemsText = itemsText.substring(0, 40) + '...';
 
-        const message = {
+                const message = {
             data: {
                 title: '🔔 Pesanan Baru RANEL CELL!',
                 body: `${userName || 'Pelanggan'} - ${itemsText}\nTotal: Rp ${total.toLocaleString('id-ID')}`,
