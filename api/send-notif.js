@@ -53,7 +53,13 @@ module.exports = async (req, res) => {
             return res.status(403).json({ error: 'Email belum diverifikasi' });
         }
 
-        const { orderId, userName, total, items } = req.body;
+        const { orderId } = req.body;
+        const orderDoc = await db.collection('Riwayat_Pesanan').doc(orderId).get();
+        if (!orderDoc.exists) return res.status(404).json({ error: 'Order tidak ditemukan' });
+        const orderData = orderDoc.data();
+        const userName = orderData.userName;
+        const total = orderData.total;
+        const items = orderData.items;
         if (!orderId || !userName) {
             return res.status(400).json({ error: 'Data tidak lengkap' });
         }
