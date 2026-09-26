@@ -199,7 +199,12 @@
                 </table>
             </div>
         </div>
-        <div id="view-logs" class="hidden">
+                <div id="view-logs" class="hidden">
+            <div class="card p-4 mb-6 flex gap-4">
+                <div class="flex-1">
+                    <input type="text" id="search-log-input" placeholder="Cari ID Transaksi atau Nama Pelanggan..." class="form-input" oninput="filterLogTable()">
+                </div>
+            </div>
             <div class="card overflow-x-auto">
                 <table>
                     <thead>
@@ -1037,9 +1042,9 @@
                 hideLoading();
             }
         }
-        function loadLogs() {
+                function loadLogs() {
             const tbody = document.getElementById('logs-table-body');
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Memuat data log...</td></tr>`;
+            if (allLogs.length === 0) tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Memuat data log...</td></tr>`;
             try {
                 const { db, collection, query, onSnapshot, limit } = window.firebaseAdmin;
                 const q = query(collection(db, "Log_Point"), limit(200));
@@ -1053,45 +1058,61 @@
                         return tB - tA;
                     });
 
-                    if (allLogs.length === 0) { 
-                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada data log.</td></tr>`; 
-                        return; 
-                    }
-                    
-                    tbody.innerHTML = allLogs.map(log => {
-                        const d = log.data;
-                        let dateStr = '-';
-                        if (d.createdAt) { try { dateStr = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) {} }
-                        
-                        const isCancelled = d.cancelled === true;
-                        const typeText = d.type === 'masuk' ? 'Point Masuk' : 'Point Keluar';
-                        const typeClass = d.type === 'masuk' ? 'text-green-400' : 'text-red-400';
-                        const amountText = d.type === 'masuk' ? `+ ${d.amount || 0}` : `- ${d.amount || 0}`;
-                        
-                        let statusBadge = isCancelled ? 
-                            `<span class="badge badge-red whitespace-nowrap">Dibatalkan</span>` : 
-                            `<span class="badge badge-green whitespace-nowrap">Aktif</span>`;
-                        
-                        let actionBtn = isCancelled ? '<span class="text-xs text-gray-600">-</span>' : 
-                            `<button onclick="cancelLogPoint('${log.id}')" class="btn-outline text-xs px-3 py-1.5 text-red-400 border-red-400 hover:bg-red-400/10">
-                                <i class="fa-solid fa-ban mr-1"></i> Batalkan
-                            </button>`;
-
-                        return `<tr class="${isCancelled ? 'opacity-50' : ''}">
-                            <td class="text-xs text-gray-400 whitespace-nowrap">${dateStr}</td>
-                            <td class="text-sm text-gray-300 whitespace-nowrap">${d.userName || '-'}</td>
-                            <td class="text-sm ${typeClass} font-bold whitespace-nowrap">${typeText}</td>
-                            <td class="text-sm font-bold whitespace-nowrap ${typeClass}">${amountText}</td>
-                            <td class="text-xs text-gray-400">${d.description || '-'}</td>
-                            <td>${statusBadge}</td>
-                            <td class="whitespace-nowrap">${actionBtn}</td>
-                        </tr>`;
-                    }).join('');
+                    // Panggil filter agar selalu update berdasarkan kata kunci pencarian (jika ada)
+                    filterLogTable();
                 }, (error) => { 
                     console.error("Error loading logs:", error);
                     tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; 
                 });
             } catch (err) {}
+        }
+
+        function filterLogTable() {
+            const searchTerm = document.getElementById('search-log-input').value.toLowerCase();
+            const filteredLogs = allLogs.filter(log => {
+                const d = log.data;
+                const matchesSearch = (d.userName || '').toLowerCase().includes(searchTerm) || (d.description || '').toLowerCase().includes(searchTerm);
+                return matchesSearch;
+            });
+            renderLogsTable(filteredLogs);
+        }
+
+        function renderLogsTable(logs) {
+            const tbody = document.getElementById('logs-table-body');
+            if (logs.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada data log ditemukan.</td></tr>`; 
+                return; 
+            }
+            
+            tbody.innerHTML = logs.map(log => {
+                const d = log.data;
+                let dateStr = '-';
+                if (d.createdAt) { try { dateStr = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) {} }
+                
+                const isCancelled = d.cancelled === true;
+                const typeText = d.type === 'masuk' ? 'Point Masuk' : 'Point Keluar';
+                const typeClass = d.type === 'masuk' ? 'text-green-400' : 'text-red-400';
+                const amountText = d.type === 'masuk' ? `+ ${d.amount || 0}` : `- ${d.amount || 0}`;
+                
+                let statusBadge = isCancelled ? 
+                    `<span class="badge badge-red whitespace-nowrap">Dibatalkan</span>` : 
+                    `<span class="badge badge-green whitespace-nowrap">Aktif</span>`;
+                
+                let actionBtn = isCancelled ? '<span class="text-xs text-gray-600">-</span>' : 
+                    `<button onclick="cancelLogPoint('${log.id}')" class="btn-outline text-xs px-3 py-1.5 text-red-400 border-red-400 hover:bg-red-400/10">
+                        <i class="fa-solid fa-ban mr-1"></i> Batalkan
+                    </button>`;
+
+                return `<tr class="${isCancelled ? 'opacity-50' : ''}">
+                    <td class="text-xs text-gray-400 whitespace-nowrap">${dateStr}</td>
+                    <td class="text-sm text-gray-300 whitespace-nowrap">${d.userName || '-'}</td>
+                    <td class="text-sm ${typeClass} font-bold whitespace-nowrap">${typeText}</td>
+                    <td class="text-sm font-bold whitespace-nowrap ${typeClass}">${amountText}</td>
+                    <td class="text-xs text-gray-400">${d.description || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td class="whitespace-nowrap">${actionBtn}</td>
+                </tr>`;
+            }).join('');
         }
 
         async function cancelLogPoint(logId) {
