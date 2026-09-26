@@ -624,6 +624,7 @@
                     const orderIdFromUrl = urlParams.get('orderId');
                     if (orderIdFromUrl) pendingOrderId = String(orderIdFromUrl);
                     loadOrders();
+                    loadLogs();
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('dashboard-view').classList.add('hidden');
