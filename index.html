@@ -189,10 +189,11 @@
                             <th>Akun Dibuat</th>
                             <th>Terakhir Online</th>
                             <th>Nomor Telepon</th>
+                            <th>Point Pelanggan</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body">
-                        <tr><td colspan="5" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data pengguna.</td></tr>
+                        <tr><td colspan="6" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data pengguna.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -917,16 +918,17 @@
             if (tabName === 'catalog') loadCatalogItems();
         }
 
-        function loadUsers() {
+                function loadUsers() {
             const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
             try {
                 const { db, collection, query, onSnapshot, limit } = window.firebaseAdmin;
-                // BATASI LISTENER HANYA 200 USER
                 const q = query(collection(db, "users"), limit(200));
                 onSnapshot(q, (snapshot) => {
                     let usersData = [];
-                    snapshot.forEach((doc) => usersData.push(doc.data()));
+                    // Ambil doc.id agar bisa digunakan untuk update point
+                    snapshot.forEach((doc) => usersData.push({ id: doc.id, ...doc.data() }));
+                    
                     function parseDate(dateStr) {
                         if (!dateStr) return 0;
                         let parts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?/);
@@ -935,22 +937,71 @@
                         return isNaN(dateObj) ? 0 : dateObj.getTime();
                     }
                     usersData.sort((a, b) => parseDate(b.LastSeen) - parseDate(a.LastSeen));
-                    if (usersData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; return; }
+                    
+                    if (usersData.length === 0) { 
+                        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 py-8">Tidak ada data.</td></tr>`; 
+                        return; 
+                    }
+                    
                     tbody.innerHTML = usersData.map(d => {
                         let createdDate = '-';
                         if (d.createdAt) { try { createdDate = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) { createdDate = d.createdAt; } }
                         const isInstalled = d.isInstalled === true;
                         const emailClass = isInstalled ? 'text-green-400 font-bold' : 'text-gray-300';
+                        const userPoints = d.points || 0;
+                        
                         return `<tr>
                             <td class="text-xs ${emailClass} whitespace-nowrap">${d.email || '-'}</td>
                             <td class="text-xs text-gray-300 whitespace-nowrap">${d.nama || '-'}</td>
                             <td class="text-xs text-gray-400 whitespace-nowrap">${createdDate}</td>
                             <td class="text-xs text-gray-400 whitespace-nowrap">${d.LastSeen || '-'}</td>
                             <td class="text-xs text-gray-300 whitespace-nowrap">${d.telp || '-'}</td>
+                            <td class="whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-yellow-400 font-bold">${userPoints.toLocaleString('id-ID')}</span>
+                                    <button onclick="editUserPoints('${d.id}', ${userPoints})" class="text-blue-400 hover:text-blue-300 text-xs" title="Edit Point">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>`;
                     }).join('');
-                }, (error) => { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; });
+                }, (error) => { 
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; 
+                });
             } catch (err) {}
+        }
+
+        // FUNGSI BARU UNTUK EDIT POINT PELANGGAN
+        async function editUserPoints(userId, currentPoints) {
+            const newPointsStr = prompt(`Masukkan jumlah point baru untuk pelanggan ini:`, currentPoints);
+            
+            // Jika admin menekan "Cancel" pada prompt
+            if (newPointsStr === null) return;
+            
+            const newPoints = parseInt(newPointsStr);
+            
+            // Validasi input
+            if (isNaN(newPoints) || newPoints < 0) {
+                showToast("Input tidak valid! Masukkan angka positif.", "error");
+                return;
+            }
+            
+            // Jika tidak ada perubahan
+            if (newPoints === currentPoints) return;
+
+            showLoading();
+            try {
+                const { db, doc, updateDoc } = window.firebaseAdmin;
+                await updateDoc(doc(db, "users", userId), { points: newPoints });
+                showToast("Point pelanggan berhasil diperbarui!");
+                // Tabel akan otomatis ter-update karena menggunakan onSnapshot
+            } catch (err) {
+                console.error("Gagal update point:", err);
+                showToast("Gagal memperbarui point. Cek Firestore Rules.", "error");
+            } finally {
+                hideLoading();
+            }
         }
 
         function loadBanners() {
