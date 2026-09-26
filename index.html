@@ -132,6 +132,7 @@
         <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-2">
             <button onclick="switchTab('orders')" id="tab-orders" class="btn-pk text-sm whitespace-nowrap">Riwayat Pesanan</button>
             <button onclick="switchTab('users')" id="tab-users" class="btn-outline text-sm whitespace-nowrap">Data Pengguna</button>
+            <button onclick="switchTab('logs')" id="tab-logs" class="btn-outline text-sm whitespace-nowrap">Log Point</button>
             <button onclick="switchTab('banners')" id="tab-banners" class="btn-outline text-sm whitespace-nowrap">Banner Promo</button>
             <button onclick="switchTab('promos')" id="tab-promos" class="btn-outline text-sm whitespace-nowrap">Kode Promo</button>
             <button onclick="switchTab('catalog')" id="tab-catalog" class="btn-outline text-sm whitespace-nowrap">Katalog Produk</button>
@@ -198,7 +199,26 @@
                 </table>
             </div>
         </div>
-
+        <div id="view-logs" class="hidden">
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Nama Pelanggan</th>
+                            <th>Aktivitas</th>
+                            <th>Jumlah Point</th>
+                            <th>Keterangan</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table-body">
+                        <tr><td colspan="7" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data log point.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         <div id="view-banners" class="hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">Kelola Banner Promo</h2>
@@ -487,7 +507,7 @@
     </div>
 
     <script>
-        let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [];
+        let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [], allLogs = [];
                 // DAFTAR EMAIL ADMIN YANG DIIZINKAN
         const ADMIN_EMAILS = [
             'andilibrianto69@gmail.com', 
@@ -882,11 +902,23 @@
                 if ((newStatus === 'Berhasil' || newStatus === 'Berhasil Ditinjau') && !wasClaimed) {
                     const pointsToAdd = calculateTransactionPoints(updatedItems, oldOrderObj.data.serviceDetails);
                     const userId = oldOrderObj.data.userId;
-                    if (userId) {
-                        const { db, doc, updateDoc, increment } = window.firebaseAdmin;
+                    if (userId && pointsToAdd > 0) {
+                        const { db, doc, updateDoc, increment, setDoc, collection } = window.firebaseAdmin;
                         const userDocRef = doc(db, "users", userId);
                         // GUNAKAN INCREMENT AGAR ATOMIC & HEMAT KUOTA
                         await updateDoc(userDocRef, { points: increment(pointsToAdd) });
+                        
+                        // CATAT LOG POINT MASUK
+                        await setDoc(doc(collection(db, "Log_Point")), {
+                            userId: userId,
+                            userName: oldOrderObj.data.userName || 'Pelanggan',
+                            type: 'masuk',
+                            amount: pointsToAdd,
+                            description: `Point Transaksi: ${currentDocId}`,
+                            orderId: currentDocId,
+                            createdAt: new Date().toISOString(),
+                            cancelled: false
+                        });
                     }
                     updatedData.pointsClaimed = true; // TANDAI SUDAH DIKLAIM
                 } else if (wasClaimed) {
@@ -903,8 +935,8 @@
             }
         }
 
-        function switchTab(tabName) {
-            const tabs = ['orders', 'users', 'banners', 'promos', 'catalog'];
+                function switchTab(tabName) {
+            const tabs = ['orders', 'users', 'logs', 'banners', 'promos', 'catalog'];
             tabs.forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
                 document.getElementById(`tab-${t}`).className = 'btn-outline text-sm whitespace-nowrap';
@@ -913,6 +945,7 @@
             document.getElementById(`tab-${tabName}`).className = 'btn-pk text-sm whitespace-nowrap';
             
             if (tabName === 'users' && document.getElementById('users-table-body').innerText.includes('Klik tab ini')) loadUsers();
+            if (tabName === 'logs' && document.getElementById('logs-table-body').innerText.includes('Klik tab ini')) loadLogs();
             if (tabName === 'banners' && allBanners.length === 0) loadBanners();
             if (tabName === 'promos' && allPromos.length === 0) loadPromos();
             if (tabName === 'catalog') loadCatalogItems();
@@ -1003,7 +1036,101 @@
                 hideLoading();
             }
         }
+        function loadLogs() {
+            const tbody = document.getElementById('logs-table-body');
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Memuat data log...</td></tr>`;
+            try {
+                const { db, collection, query, onSnapshot, limit } = window.firebaseAdmin;
+                const q = query(collection(db, "Log_Point"), limit(200));
+                onSnapshot(q, (snapshot) => {
+                    allLogs = [];
+                    snapshot.forEach((docSnap) => allLogs.push({ id: docSnap.id, data: docSnap.data() }));
+                    
+                    allLogs.sort((a, b) => {
+                        const tA = a.data.createdAt ? new Date(a.data.createdAt).getTime() : 0;
+                        const tB = b.data.createdAt ? new Date(b.data.createdAt).getTime() : 0;
+                        return tB - tA;
+                    });
 
+                    if (allLogs.length === 0) { 
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-8">Tidak ada data log.</td></tr>`; 
+                        return; 
+                    }
+                    
+                    tbody.innerHTML = allLogs.map(log => {
+                        const d = log.data;
+                        let dateStr = '-';
+                        if (d.createdAt) { try { dateStr = new Date(d.createdAt).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) {} }
+                        
+                        const isCancelled = d.cancelled === true;
+                        const typeText = d.type === 'masuk' ? 'Point Masuk' : 'Point Keluar';
+                        const typeClass = d.type === 'masuk' ? 'text-green-400' : 'text-red-400';
+                        const amountText = d.type === 'masuk' ? `+ ${d.amount || 0}` : `- ${d.amount || 0}`;
+                        
+                        let statusBadge = isCancelled ? 
+                            `<span class="badge badge-red whitespace-nowrap">Dibatalkan</span>` : 
+                            `<span class="badge badge-green whitespace-nowrap">Aktif</span>`;
+                        
+                        let actionBtn = isCancelled ? '<span class="text-xs text-gray-600">-</span>' : 
+                            `<button onclick="cancelLogPoint('${log.id}')" class="btn-outline text-xs px-3 py-1.5 text-red-400 border-red-400 hover:bg-red-400/10">
+                                <i class="fa-solid fa-ban mr-1"></i> Batalkan
+                            </button>`;
+
+                        return `<tr class="${isCancelled ? 'opacity-50' : ''}">
+                            <td class="text-xs text-gray-400 whitespace-nowrap">${dateStr}</td>
+                            <td class="text-sm text-gray-300 whitespace-nowrap">${d.userName || '-'}</td>
+                            <td class="text-sm ${typeClass} font-bold whitespace-nowrap">${typeText}</td>
+                            <td class="text-sm font-bold whitespace-nowrap ${typeClass}">${amountText}</td>
+                            <td class="text-xs text-gray-400">${d.description || '-'}</td>
+                            <td>${statusBadge}</td>
+                            <td class="whitespace-nowrap">${actionBtn}</td>
+                        </tr>`;
+                    }).join('');
+                }, (error) => { 
+                    console.error("Error loading logs:", error);
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-400 py-8">Gagal memuat data.</td></tr>`; 
+                });
+            } catch (err) {}
+        }
+
+        async function cancelLogPoint(logId) {
+            if (!confirm("Yakin ingin membatalkan aktivitas point ini?\n\nJika Point Masuk: Point akan dikurangi dari pelanggan.\nJika Point Keluar: Point akan dikembalikan ke pelanggan.")) return;
+            showLoading();
+            try {
+                const { db, doc, updateDoc, increment } = window.firebaseAdmin;
+                
+                const logObj = allLogs.find(l => l.id === logId);
+                if (!logObj) {
+                    hideLoading();
+                    showToast("Data log tidak ditemukan.", "error");
+                    return;
+                }
+
+                const d = logObj.data;
+                const userId = d.userId;
+                const amount = d.amount || 0;
+                const type = d.type;
+
+                // Update log menjadi cancelled
+                await updateDoc(doc(db, "Log_Point", logId), { cancelled: true });
+
+                // Update saldo user
+                if (userId) {
+                    const userDocRef = doc(db, "users", userId);
+                    // Jika tadi masuk (dikasih point), sekarang dikurangi
+                    // Jika tadi keluar (dipakai point), sekarang dikembalikan (ditambah)
+                    const pointAdjustment = type === 'masuk' ? -amount : amount;
+                    await updateDoc(userDocRef, { points: increment(pointAdjustment) });
+                }
+
+                showToast("Log point berhasil dibatalkan & saldo pelanggan disesuaikan!");
+            } catch (err) {
+                console.error("Gagal batalkan log:", err);
+                showToast("Gagal membatalkan log.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
         function loadBanners() {
             const { db, collection, query, onSnapshot, limit } = window.firebaseAdmin;
             const listEl = document.getElementById('banners-list');
