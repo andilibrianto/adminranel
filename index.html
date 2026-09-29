@@ -231,9 +231,9 @@
             </div>
         </div>
 
-        <!-- MODAL TAMBAH LOG POINT -->
+                <!-- MODAL TAMBAH LOG POINT -->
         <div id="add-log-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div class="card p-6 w-full max-w-md my-8 max-h-[90vh] overflow-y-auto">
+            <div class="card p-6 w-full max-w-md my-8 max-h-[90vh] overflow-y-auto relative">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-bold">Tambah Log Point Manual</h3>
                     <button onclick="closeAddLogModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -243,9 +243,11 @@
                         <label class="text-xs text-gray-500 mb-1 block">Waktu</label>
                         <input type="datetime-local" id="log-waktu" class="form-input">
                     </div>
-                    <div>
+                    <div class="relative">
                         <label class="text-xs text-gray-500 mb-1 block">Nama Pelanggan</label>
-                        <select id="log-userId" class="form-input"></select>
+                        <input type="text" id="log-user-search" class="form-input" placeholder="Ketik nama atau no telepon..." oninput="searchLogUser(this.value)" autocomplete="off">
+                        <input type="hidden" id="log-userId">
+                        <div id="log-user-suggestions" class="absolute z-50 w-full mt-1 bg-dk-700 border border-dk-600 rounded-lg max-h-48 overflow-y-auto hidden"></div>
                     </div>
                     <div>
                         <label class="text-xs text-gray-500 mb-1 block">Aktivitas</label>
@@ -1202,13 +1204,12 @@
                 hideLoading();
             }
         }
-                function openAddLogModal() {
-            const userSelect = document.getElementById('log-userId');
-            userSelect.innerHTML = '<option value="">- Pilih Pelanggan -</option>';
-            allUsersData.forEach(u => {
-                userSelect.innerHTML += `<option value="${u.id}">${u.nama || 'Tanpa Nama'} (${u.telp || 'No Telp Kosong'})</option>`;
-            });
-
+                    function openAddLogModal() {
+            // Kosongkan input pencarian & hidden id
+            document.getElementById('log-user-search').value = '';
+            document.getElementById('log-userId').value = '';
+            document.getElementById('log-user-suggestions').classList.add('hidden');
+            
             const now = new Date();
             const offset = now.getTimezoneOffset();
             const localNow = new Date(now.getTime() - offset * 60000);
@@ -1224,6 +1225,103 @@
 
         function closeAddLogModal() {
             document.getElementById('add-log-modal').classList.add('hidden');
+        }
+
+        // FUNGSI PENCARIAN AUTOCOMPLETE PELANGGAN
+        function searchLogUser(query) {
+            const suggestionBox = document.getElementById('log-user-suggestions');
+            const hiddenUserId = document.getElementById('log-userId');
+            
+            // Reset ID terpilih setiap kali user mengetik ulang
+            hiddenUserId.value = '';
+            
+            query = query.toLowerCase().trim();
+            if (!query) {
+                suggestionBox.classList.add('hidden');
+                suggestionBox.innerHTML = '';
+                return;
+            }
+
+            // Cari yang namanya atau no telp-nya mengandung kata kunci
+            const filteredUsers = allUsersData.filter(u => {
+                const nama = (u.nama || '').toLowerCase();
+                const telp = (u.telp || '').toLowerCase();
+                return nama.includes(query) || telp.includes(query);
+            }).slice(0, 10); // Batasi hanya 10 saran teratas
+
+            if (filteredUsers.length === 0) {
+                suggestionBox.innerHTML = `<div class="p-2 text-xs text-gray-400">Pelanggan tidak ditemukan</div>`;
+                suggestionBox.classList.remove('hidden');
+                return;
+            }
+
+            suggestionBox.innerHTML = filteredUsers.map(u => `
+                <div onclick="selectLogUser('${u.id}', '${(u.nama || 'Tanpa Nama').replace(/'/g, "\\'")}')" class="p-2 text-xs text-gray-300 hover:bg-pk/20 cursor-pointer border-b border-dk-600 last:border-0">
+                    ${u.nama || 'Tanpa Nama'} <span class="text-gray-500">(${u.telp || 'No Telp Kosong'})</span>
+                </div>
+            `).join('');
+            suggestionBox.classList.remove('hidden');
+        }
+
+        // FUNGSI KETIKA PELANGGAN DIPILIH DARI SARAN
+        function selectLogUser(userId, userName) {
+            document.getElementById('log-user-search').value = userName;
+            document.getElementById('log-userId').value = userId;
+            document.getElementById('log-user-suggestions').classList.add('hidden');
+        }
+
+        async function saveLogPoint() {
+            const userId = document.getElementById('log-userId').value;
+            const userSearchVal = document.getElementById('log-user-search').value;
+            const waktu = document.getElementById('log-waktu').value;
+            const type = document.getElementById('log-type').value;
+            const amount = parseInt(document.getElementById('log-amount').value);
+            const desc = document.getElementById('log-desc').value;
+            const isCancelled = document.getElementById('log-status').value === 'true';
+
+            if (!userId && !userSearchVal) { 
+                showToast("Pilih pelanggan dari daftar saran!", "error"); 
+                return; 
+            }
+            if (!userId && userSearchVal) {
+                showToast("Pelanggan belum dipilih. Klik nama dari daftar saran yang muncul!", "error"); 
+                return; 
+            }
+            if (isNaN(amount) || amount <= 0) { showToast("Jumlah point tidak valid!", "error"); return; }
+
+            const userObj = allUsersData.find(u => u.id === userId);
+            const userName = userObj ? (userObj.nama || 'Pelanggan') : 'Pelanggan';
+
+            showLoading();
+            try {
+                const { db, doc, collection, setDoc, updateDoc, increment } = window.firebaseAdmin;
+                
+                const logData = {
+                    userId: userId,
+                    userName: userName,
+                    type: type,
+                    amount: amount,
+                    description: desc || 'Manual Input',
+                    createdAt: new Date(waktu).toISOString(),
+                    cancelled: isCancelled
+                };
+                await setDoc(doc(collection(db, "Log_Point")), logData);
+
+                // Update saldo user jika status Aktif
+                if (!isCancelled) {
+                    const userDocRef = doc(db, "users", userId);
+                    const pointAdjustment = type === 'masuk' ? amount : -amount;
+                    await updateDoc(userDocRef, { points: increment(pointAdjustment) });
+                }
+
+                showToast("Log point manual berhasil ditambahkan!");
+                closeAddLogModal();
+            } catch (err) {
+                console.error("Gagal simpan log manual:", err);
+                showToast("Gagal menyimpan log.", "error");
+            } finally {
+                hideLoading();
+            }
         }
 
         async function saveLogPoint() {
