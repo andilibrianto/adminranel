@@ -199,7 +199,13 @@
                 </table>
             </div>
         </div>
-                <div id="view-logs" class="hidden">
+                        <div id="view-logs" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Riwayat Log Point</h2>
+                <button onclick="openAddLogModal()" class="btn-pk text-sm">
+                    <i class="fa-solid fa-plus mr-2"></i> Tambah Log Manual
+                </button>
+            </div>
             <div class="card p-4 mb-6 flex gap-4">
                 <div class="flex-1">
                     <input type="text" id="search-log-input" placeholder="Cari ID Transaksi atau Nama Pelanggan..." class="form-input" oninput="filterLogTable()">
@@ -219,9 +225,53 @@
                         </tr>
                     </thead>
                     <tbody id="logs-table-body">
-                        <tr><td colspan="7" class="text-center text-gray-500 py-8">Klik tab ini untuk memuat data log point.</td></tr>
+                        <tr><td colspan="7" class="text-center text-gray-500 py-8">Memuat data log...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- MODAL TAMBAH LOG POINT -->
+        <div id="add-log-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 z-50 overflow-y-auto">
+            <div class="card p-6 w-full max-w-md my-8 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold">Tambah Log Point Manual</h3>
+                    <button onclick="closeAddLogModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Waktu</label>
+                        <input type="datetime-local" id="log-waktu" class="form-input">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Nama Pelanggan</label>
+                        <select id="log-userId" class="form-input"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Aktivitas</label>
+                        <select id="log-type" class="form-input">
+                            <option value="masuk">Point Masuk</option>
+                            <option value="keluar">Point Keluar</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Jumlah Point</label>
+                        <input type="number" id="log-amount" class="form-input" placeholder="Contoh: 50">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Keterangan</label>
+                        <input type="text" id="log-desc" class="form-input" placeholder="Contoh: Bonus Point Promo">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Status</label>
+                        <select id="log-status" class="form-input">
+                            <option value="false">Aktif</option>
+                            <option value="true">Dibatalkan</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="saveLogPoint()" class="btn-pk w-full mt-6">Simpan Log</button>
+                <button onclick="closeAddLogModal()" class="btn-outline w-full mt-3">Batal</button>
             </div>
         </div>
         <div id="view-banners" class="hidden">
@@ -512,7 +562,7 @@
     </div>
 
     <script>
-        let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [], allLogs = [];
+        let currentDocId = null, allOrders = [], pendingOrderId = null, isInitialLoadOrders = true, allBanners = [], allPromos = [], allLogs = [], allUsersData = [];
                 // DAFTAR EMAIL ADMIN YANG DIIZINKAN
         const ADMIN_EMAILS = [
             'andilibrianto69@gmail.com', 
@@ -630,6 +680,7 @@
                     if (orderIdFromUrl) pendingOrderId = String(orderIdFromUrl);
                     loadOrders();
                     loadLogs();
+                    loadUsers();
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('dashboard-view').classList.add('hidden');
@@ -941,7 +992,7 @@
             }
         }
 
-                function switchTab(tabName) {
+            function switchTab(tabName) {
             const tabs = ['orders', 'users', 'logs', 'banners', 'promos', 'catalog'];
             tabs.forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
@@ -950,23 +1001,21 @@
             document.getElementById(`view-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).className = 'btn-pk text-sm whitespace-nowrap';
             
-            if (tabName === 'users' && document.getElementById('users-table-body').innerText.includes('Klik tab ini')) loadUsers();
-            if (tabName === 'logs' && document.getElementById('logs-table-body').innerText.includes('Klik tab ini')) loadLogs();
             if (tabName === 'banners' && allBanners.length === 0) loadBanners();
             if (tabName === 'promos' && allPromos.length === 0) loadPromos();
             if (tabName === 'catalog') loadCatalogItems();
         }
 
-                function loadUsers() {
+            function loadUsers() {
             const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
+            if (allUsersData.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-500 py-8">Memuat data pengguna...</td></tr>`;
             try {
                 const { db, collection, query, onSnapshot, limit } = window.firebaseAdmin;
                 const q = query(collection(db, "users"), limit(200));
                 onSnapshot(q, (snapshot) => {
-                    let usersData = [];
-                    // Ambil doc.id agar bisa digunakan untuk update point
-                    snapshot.forEach((doc) => usersData.push({ id: doc.id, ...doc.data() }));
+                    allUsersData = []; // SIMPAN KE VARIABEL GLOBAL
+                    snapshot.forEach((doc) => allUsersData.push({ id: doc.id, ...doc.data() }));
+                    let usersData = allUsersData; 
                     
                     function parseDate(dateStr) {
                         if (!dateStr) return 0;
@@ -1149,6 +1198,75 @@
             } catch (err) {
                 console.error("Gagal batalkan log:", err);
                 showToast("Gagal membatalkan log.", "error");
+            } finally {
+                hideLoading();
+            }
+        }
+                function openAddLogModal() {
+            const userSelect = document.getElementById('log-userId');
+            userSelect.innerHTML = '<option value="">- Pilih Pelanggan -</option>';
+            allUsersData.forEach(u => {
+                userSelect.innerHTML += `<option value="${u.id}">${u.nama || 'Tanpa Nama'} (${u.telp || 'No Telp Kosong'})</option>`;
+            });
+
+            const now = new Date();
+            const offset = now.getTimezoneOffset();
+            const localNow = new Date(now.getTime() - offset * 60000);
+            document.getElementById('log-waktu').value = localNow.toISOString().slice(0, 16);
+
+            document.getElementById('log-type').value = 'masuk';
+            document.getElementById('log-amount').value = '';
+            document.getElementById('log-desc').value = '';
+            document.getElementById('log-status').value = 'false';
+
+            document.getElementById('add-log-modal').classList.remove('hidden');
+        }
+
+        function closeAddLogModal() {
+            document.getElementById('add-log-modal').classList.add('hidden');
+        }
+
+        async function saveLogPoint() {
+            const userId = document.getElementById('log-userId').value;
+            const waktu = document.getElementById('log-waktu').value;
+            const type = document.getElementById('log-type').value;
+            const amount = parseInt(document.getElementById('log-amount').value);
+            const desc = document.getElementById('log-desc').value;
+            const isCancelled = document.getElementById('log-status').value === 'true';
+
+            if (!userId) { showToast("Pilih pelanggan terlebih dahulu!", "error"); return; }
+            if (isNaN(amount) || amount <= 0) { showToast("Jumlah point tidak valid!", "error"); return; }
+
+            const userObj = allUsersData.find(u => u.id === userId);
+            const userName = userObj ? (userObj.nama || 'Pelanggan') : 'Pelanggan';
+
+            showLoading();
+            try {
+                const { db, doc, collection, setDoc, updateDoc, increment } = window.firebaseAdmin;
+                
+                const logData = {
+                    userId: userId,
+                    userName: userName,
+                    type: type,
+                    amount: amount,
+                    description: desc || 'Manual Input',
+                    createdAt: new Date(waktu).toISOString(),
+                    cancelled: isCancelled
+                };
+                await setDoc(doc(collection(db, "Log_Point")), logData);
+
+                // Update saldo user jika status Aktif
+                if (!isCancelled) {
+                    const userDocRef = doc(db, "users", userId);
+                    const pointAdjustment = type === 'masuk' ? amount : -amount;
+                    await updateDoc(userDocRef, { points: increment(pointAdjustment) });
+                }
+
+                showToast("Log point manual berhasil ditambahkan!");
+                closeAddLogModal();
+            } catch (err) {
+                console.error("Gagal simpan log manual:", err);
+                showToast("Gagal menyimpan log.", "error");
             } finally {
                 hideLoading();
             }
